@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Transactions", href: "/dashboard/transactions", icon: History },
-  { name: "Nasiya (Debts)", href: "/dashboard/debts", icon: Users },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Asosiy", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Amallar", href: "/dashboard/transactions", icon: History },
+  { name: "Nasiyalar", href: "/dashboard/debts", icon: Users },
+  { name: "Sozlamalar", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar() {

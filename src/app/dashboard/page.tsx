@@ -42,33 +42,33 @@ export default function OverviewPage() {
 
   const stats = [
     {
-      title: "Total Balance",
+      title: "Umumiy Balans",
       value: `${(data?.balance || 0).toLocaleString()} UZS`,
-      description: "+2.1% from last week",
+      description: "O'tgan haftaga nisbatan +2.1%",
       icon: Wallet,
       color: "text-blue-500",
       bg: "bg-blue-500/10"
     },
     {
-      title: "Monthly Income",
+      title: "Oylik Kirim",
       value: `${(data?.income || 0).toLocaleString()} UZS`,
-      description: "+12% from last month",
+      description: "O'tgan oyga nisbatan +12%",
       icon: ArrowUpRight,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10"
     },
     {
-      title: "Monthly Expense",
+      title: "Oylik Chiqim",
       value: `${(data?.expense || 0).toLocaleString()} UZS`,
-      description: "-4% from last month",
+      description: "O'tgan oyga nisbatan -4%",
       icon: ArrowDownRight,
       color: "text-rose-500",
       bg: "bg-rose-500/10"
     },
     {
-      title: "Net Profit",
+      title: "Sof Foyda",
       value: `${(data?.profit || 0).toLocaleString()} UZS`,
-      description: "+8% from last month",
+      description: "O'tgan oyga nisbatan +8%",
       icon: TrendingUp,
       color: "text-amber-500",
       bg: "bg-amber-500/10"
@@ -79,9 +79,9 @@ export default function OverviewPage() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col gap-2">
         <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-          Dashboard Overview
+          Boshqaruv Paneli
         </h2>
-        <p className="text-muted-foreground font-medium">Monitor your business performance in real-time.</p>
+        <p className="text-muted-foreground font-medium">Biznesingiz ko'rsatkichlarini real vaqtda kuzating.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -109,7 +109,7 @@ export default function OverviewPage() {
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              Growth Analytics
+              O'sish Analitikasi
             </CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
@@ -168,12 +168,12 @@ export default function OverviewPage() {
             <Target className="h-48 w-48 rotate-12" />
           </div>
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Financial Health</CardTitle>
+            <CardTitle className="text-lg font-bold">Moliyaviy Holat</CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground font-medium">Savings Goal</span>
+                <span className="text-muted-foreground font-medium">Jamg'arma Maqsadi</span>
                 <span className="font-bold text-primary">85%</span>
               </div>
               <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden ring-1 ring-white/10">
@@ -183,12 +183,12 @@ export default function OverviewPage() {
             
             <div className="pt-2 grid grid-cols-2 gap-8">
               <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Efficiency</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Samaradorlik</p>
                 <p className="text-2xl font-black italic">94.2%</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Risk Level</p>
-                <p className="text-2xl font-black text-emerald-400 italic">LOW</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Xavf Darajasi</p>
+                <p className="text-2xl font-black text-emerald-400 italic">PAST</p>
               </div>
             </div>
 
@@ -201,7 +201,7 @@ export default function OverviewPage() {
                       <Zap className="h-5 w-5 text-primary" />
                     </div>
                     <p className="text-sm leading-relaxed font-medium">
-                      <span className="text-primary font-bold">AI Insight:</span> Daromadingiz o'tgan oyga nisbatan 15% oshdi. Bu mablag'ni aktivlarga qayta investitsiya qilishni tavsiya etamiz.
+                      <span className="text-primary font-bold">AI Tahlili:</span> Daromadingiz o'tgan oyga nisbatan 15% oshdi. Bu mablag'ni aktivlarga qayta investitsiya qilishni tavsiya etamiz.
                     </p>
                   </div>
                 </div>

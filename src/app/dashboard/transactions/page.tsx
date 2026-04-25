@@ -41,8 +41,8 @@ export default function TransactionsPage() {
   const exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(transactions);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-    XLSX.writeFile(wb, "uzfinance_transactions.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Amallar");
+    XLSX.writeFile(wb, "uzfinance_amallar.xlsx");
   };
 
   const filtered = transactions.filter(t => 
@@ -55,7 +55,7 @@ export default function TransactionsPage() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-            Transactions History
+            Amallar Tarixi
           </h2>
           <p className="text-muted-foreground font-medium">Barcha kirim va chiqimlarni nazorat qiling.</p>
         </div>
@@ -67,13 +67,13 @@ export default function TransactionsPage() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md group">
+        <div className="relative flex-1 max-md group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000"></div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input 
               placeholder="Qidirish (Kategoriya yoki izoh)..." 
-              className="pl-10 bg-card/40 border-white/10 backdrop-blur-xl h-12 rounded-xl focus:ring-primary/50" 
+              className="pl-10 bg-card/40 border-white/10 backdrop-blur-xl h-12 rounded-xl focus:ring-primary/50 text-sm" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -110,8 +110,8 @@ export default function TransactionsPage() {
                 <TableCell colSpan={5} className="h-64 text-center">
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <History className="h-16 w-16 mb-4 opacity-10" />
-                    <p className="text-xl font-bold opacity-50">Hech qanday tranzaksiya topilmadi</p>
-                    <p className="text-sm opacity-40">Telegram bot orqali birinchi xarajatingizni kiriting.</p>
+                    <p className="text-xl font-bold opacity-50">Hech qanday amal topilmadi</p>
+                    <p className="text-sm opacity-40">Telegram bot orqali birinchi amalingizni kiriting.</p>
                   </div>
                 </TableCell>
               </TableRow>
