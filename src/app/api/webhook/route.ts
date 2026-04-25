@@ -108,9 +108,15 @@ export async function POST(req: NextRequest) {
           [profile.id, amt, type, cat, `Tugma orqali: ${cat}`]
         );
 
-        const typeEmoji = type === 'income' ? '🟢 Kirim' : '🔴 Chiqim';
-        // Send success as a new message
-        await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${Number(amt).toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${cat}`);
+        const typeEmoji = type === 'income' ? '🟢 <b>Kirim</b>' : '🔴 <b>Chiqim</b>';
+        await bot.telegram.sendMessage(chatId, 
+          `<b>Muvaffaqiyatli saqlandi!</b> ✅\n\n` +
+          `💰 <b>Summa:</b> ${Number(amt).toLocaleString()} UZS\n` +
+          `📊 <b>Turi:</b> ${typeEmoji}\n` +
+          `🗂 <b>Kategoriya:</b> ${cat}\n\n` +
+          `<i>Dashboardda yangilandi.</i> 📈`,
+          { parse_mode: 'HTML' }
+        );
         
         // Show main menu again
         await bot.telegram.sendMessage(chatId, "Yana nima kiritamiz?", {
@@ -166,9 +172,17 @@ export async function POST(req: NextRequest) {
           [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text, text]
         );
 
-        const typeEmoji = parsed.type === 'income' ? '🟢 Kirim (Tushum)' : '🔴 Chiqim (Xarajat)';
+        const typeEmoji = parsed.type === 'income' ? '🟢 <b>Kirim</b>' : '🔴 <b>Chiqim</b>';
         await bot.telegram.deleteMessage(chatId, feedback.message_id);
-        await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
+        await bot.telegram.sendMessage(chatId, 
+          `<b>Ovozli xabar saqlandi!</b> 🎤✅\n\n` +
+          `💰 <b>Summa:</b> ${parsed.amount.toLocaleString()} UZS\n` +
+          `📊 <b>Turi:</b> ${typeEmoji}\n` +
+          `🗂 <b>Kategoriya:</b> ${parsed.category}\n` +
+          `📝 <b>Izoh:</b> ${parsed.note}\n\n` +
+          `<i>Tahlillar dashboardda mavjud.</i> 📉`,
+          { parse_mode: 'HTML' }
+        );
       } catch (err: any) {
         await bot.telegram.sendMessage(chatId, `❌ Xatolik: ${err.message}`);
       }
@@ -193,8 +207,16 @@ export async function POST(req: NextRequest) {
               'INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)',
               [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text]
             );
-            const typeEmoji = parsed.type === 'income' ? '🟢 Kirim (Tushum)' : '🔴 Chiqim (Xarajat)';
-            await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
+            const typeEmoji = parsed.type === 'income' ? '🟢 <b>Kirim</b>' : '🔴 <b>Chiqim</b>';
+            await bot.telegram.sendMessage(chatId, 
+              `<b>Muvaffaqiyatli saqlandi!</b> ✅\n\n` +
+              `💰 <b>Summa:</b> ${parsed.amount.toLocaleString()} UZS\n` +
+              `📊 <b>Turi:</b> ${typeEmoji}\n` +
+              `🗂 <b>Kategoriya:</b> ${parsed.category}\n` +
+              `📝 <b>Izoh:</b> ${parsed.note}\n\n` +
+              `<i>Tahlillar dashboardda yangilandi.</i> 📈`,
+              { parse_mode: 'HTML' }
+            );
           } else {
             await bot.telegram.sendMessage(chatId, "Tushunmadim, iltimos miqdorni ham ayting.");
           }

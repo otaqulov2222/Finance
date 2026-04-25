@@ -40,10 +40,17 @@ export default function OverviewPage() {
     </div>
   );
 
+  const formatValue = (value: number) => {
+    if (data?.currency === 'USD') {
+      return `$${(value / data.usdRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return `${value.toLocaleString()} UZS`;
+  };
+
   const stats = [
     {
       title: "Umumiy Balans",
-      value: `${(data?.balance || 0).toLocaleString()} UZS`,
+      value: formatValue(data?.balance || 0),
       description: "O'tgan haftaga nisbatan +2.1%",
       icon: Wallet,
       color: "text-blue-500",
@@ -51,7 +58,7 @@ export default function OverviewPage() {
     },
     {
       title: "Oylik Kirim",
-      value: `${(data?.income || 0).toLocaleString()} UZS`,
+      value: formatValue(data?.income || 0),
       description: "O'tgan oyga nisbatan +12%",
       icon: ArrowUpRight,
       color: "text-emerald-500",
@@ -59,7 +66,7 @@ export default function OverviewPage() {
     },
     {
       title: "Oylik Chiqim",
-      value: `${(data?.expense || 0).toLocaleString()} UZS`,
+      value: formatValue(data?.expense || 0),
       description: "O'tgan oyga nisbatan -4%",
       icon: ArrowDownRight,
       color: "text-rose-500",
@@ -67,7 +74,7 @@ export default function OverviewPage() {
     },
     {
       title: "Sof Foyda",
-      value: `${(data?.profit || 0).toLocaleString()} UZS`,
+      value: formatValue(data?.profit || 0),
       description: "O'tgan oyga nisbatan +8%",
       icon: TrendingUp,
       color: "text-amber-500",

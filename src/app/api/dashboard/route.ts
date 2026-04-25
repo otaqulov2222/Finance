@@ -1,8 +1,21 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+async function getUsdRate() {
+  try {
+    const res = await fetch('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/', { next: { revalidate: 3600 } });
+    const data = await res.json();
+    return Number(data[0].Rate);
+  } catch (err) {
+    console.error("CBU API error:", err);
+    return 12650; // Xatolik bo'lsa default kurs
+  }
+}
+
 export async function GET() {
   try {
+    const usdRate = await getUsdRate();
+
     // 1. Umumiy balans, kirim va chiqimlarni hisoblash
     const statsResult = await query(`
       SELECT 
@@ -27,12 +40,18 @@ export async function GET() {
       ORDER BY created_at ASC
     `);
 
+    // 3. Sozlamalardan valyutani olish
+    const settingsRes = await query('SELECT currency FROM settings WHERE id = 1');
+    const currency = settingsRes.rows[0]?.currency || 'UZS';
+
     return NextResponse.json({
       balance,
       income: Number(total_income),
       expense: Number(total_expense),
       profit,
-      chartData: chartResult.rows
+      chartData: chartResult.rows,
+      usdRate,
+      currency
     });
   } catch (error) {
     console.error("Dashboard API Error:", error);
