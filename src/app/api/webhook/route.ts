@@ -8,7 +8,7 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
 async function parseTransaction(text: string) {
   const response = await groq.chat.completions.create({
-    model: "llama3-70b-8192",
+    model: "llama-3.3-70b-versatile",
     messages: [
       {
         role: "system",
