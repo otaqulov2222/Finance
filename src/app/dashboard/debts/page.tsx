@@ -62,15 +62,23 @@ export default function DebtsPage() {
       const res = await fetch('/api/debts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, amount: Number(form.amount) })
+        body: JSON.stringify({ 
+          ...form, 
+          amount: Number(form.amount),
+          due_date: form.due_date || null 
+        })
       });
       if (res.ok) {
         setIsAddOpen(false);
         setForm({ person: "", amount: "", due_date: "", status: "pending" });
         fetchDebts();
+      } else {
+        const error = await res.json();
+        alert("Xatolik: " + (error.error || "Saqlashda muammo bo'ldi"));
       }
     } catch (error) {
       console.error("Add error", error);
+      alert("Server bilan bog'lanishda xatolik!");
     }
   };
 
@@ -79,14 +87,22 @@ export default function DebtsPage() {
       const res = await fetch(`/api/debts/${editingDebt.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, amount: Number(form.amount) })
+        body: JSON.stringify({ 
+          ...form, 
+          amount: Number(form.amount),
+          due_date: form.due_date || null 
+        })
       });
       if (res.ok) {
         setIsEditOpen(false);
         fetchDebts();
+      } else {
+        const error = await res.json();
+        alert("Xatolik: " + (error.error || "Yangilashda muammo bo'ldi"));
       }
     } catch (error) {
       console.error("Update error", error);
+      alert("Server bilan bog'lanishda xatolik!");
     }
   };
 
