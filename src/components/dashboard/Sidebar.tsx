@@ -82,9 +82,14 @@ export function Sidebar() {
             <p className="text-xs font-bold text-white mb-3 leading-relaxed">
               Bot orqali tahlillarni boshlang.
             </p>
-            <button className="w-full py-2.5 rounded-lg bg-primary text-black text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-lg shadow-primary/20">
+            <a 
+              href="https://t.me/UzFinance_bot" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block w-full py-2.5 rounded-lg bg-primary text-black text-center text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-lg shadow-primary/20"
+            >
               Botga o'tish
-            </button>
+            </a>
           </div>
         </div>
 
