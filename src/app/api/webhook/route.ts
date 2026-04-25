@@ -12,14 +12,22 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz professional moliyaviy tahlilchisiz. Foydalanuvchi matnidan ma'lumotlarni JSON formatida ajrating. 
-        MUHIM QOIDALAR:
-        1. Barcha matnli ma'lumotlar (category, note) faqat O'ZBEK TILIDA va LOTIN ALIFBOSIDA bo'lishi shart.
-        2. "amount" faqat raqam (masalan: 1500000).
-        3. "type" tushum bo'lsa "income", xarajat bo'lsa "expense".
-        4. "category" faqat bitta so'zdan iborat o'zbekcha kategoriya (masalan: Savdo, Ovqat, Transport, Ijara).
+        content: `Siz O'zbekiston uchun professional moliyaviy tahlilchisiz. 
+        QOIDALAR:
+        1. FAQAT O'ZBEK LOTIN ALIFBOSIDA JAVOB BERING (A-Z, O', G', SH, CH). Kirill yoki boshqa tillar (Qozoq, Rus) QAT'IYAN MAN ETILADI.
+        2. "type" mantiqi:
+           - Tushum, savdo, foyda, daromad, berdi, tushdi -> "income"
+           - Xarajat, to'lov, oldim, xarid, sarf, ishlatdim -> "expense"
+        3. "amount" tahlili:
+           - "50 ming" -> 50000, "yuz ming" -> 100000, "1.5 million" -> 1500000.
+        4. "category" faqat bitta o'zbekcha so'z bo'lsin.
         
-        Format: { "amount": number, "type": "income" | "expense", "category": string, "note": string }`
+        MISOL:
+        User: "Savdodan 1.2 mln tushdi"
+        JSON: { "amount": 1200000, "type": "income", "category": "Savdo", "note": "Savdodan tushum" }
+        
+        User: "Tushlikka 45 ming sarfladim"
+        JSON: { "amount": 45000, "type": "expense", "category": "Ovqat", "note": "Tushlik xarajati" }`
       },
       { role: "user", content: text }
     ],
