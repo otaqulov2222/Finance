@@ -57,8 +57,8 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
-    // Har 10 soniyada ma'lumotlarni yangilab turish
-    const interval = setInterval(fetchTransactions, 10000);
+    // Har 5 soniyada ma'lumotlarni yangilab turish (Tezkor)
+    const interval = setInterval(fetchTransactions, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -188,7 +188,12 @@ export default function TransactionsPage() {
               filtered.map((item) => (
                 <TableRow key={item.id} className="border-white/5 group transition-all duration-300 hover:bg-white/5">
                   <TableCell className="font-medium text-white/80 py-4">
-                    {new Date(item.created_at).toLocaleDateString('uz-UZ')}
+                    <div className="flex flex-col">
+                      <span>{new Date(item.created_at).toLocaleDateString('uz-UZ')}</span>
+                      <span className="text-[10px] text-muted-foreground opacity-60">
+                        {new Date(item.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)]">
