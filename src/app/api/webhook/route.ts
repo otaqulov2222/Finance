@@ -51,37 +51,42 @@ export async function POST(req: NextRequest) {
 
     // Handle Voice
     if (update.message.voice) {
-      await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda, iltimos kuting...");
+      const feedback = await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda...");
       
-      const fileId = update.message.voice.file_id;
-      const fileLink = await bot.telegram.getFileLink(fileId);
-      
-      const res = await fetch(fileLink.href);
-      const arrayBuffer = await res.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      // Convert Buffer to a Blob-like object that Groq accepts
-      const file = new File([buffer], "voice.ogg", { type: "audio/ogg" });
-      
-      const transcription = await groq.audio.transcriptions.create({
-        file: file,
-        model: "whisper-large-v3",
-      });
+      try {
+        const fileId = update.message.voice.file_id;
+        const fileLink = await bot.telegram.getFileLink(fileId);
+        
+        const res = await fetch(fileLink.href);
+        if (!res.ok) throw new Error("Telegramdan faylni yuklab bo'lmadi");
+        
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        // Use a more direct way to send buffer to Groq
+        const transcription = await groq.audio.transcriptions.create({
+          file: await Groq.toFile(buffer, "voice.ogg"),
+          model: "whisper-large-v3",
+        });
 
-      const text = transcription.text;
-      const parsed = await parseTransaction(text);
+        const text = transcription.text;
+        const parsed = await parseTransaction(text);
 
-      if (!parsed.category) {
-        await bot.telegram.sendMessage(chatId, `Tushundim: "${text}".\nLekin bu qaysi kategoriya uchun? (Masalan: ijara, xarid, savdo)`);
-        return NextResponse.json({ ok: true });
+        if (!parsed.amount) {
+          await bot.telegram.sendMessage(chatId, `⚠️ Miqdorni aniqlab bo'lmadi. Matn: "${text}"`);
+          return NextResponse.json({ ok: true });
+        }
+
+        await query(
+          'INSERT INTO transactions (user_id, amount, type, category, note, voice_transcription) VALUES ($1, $2, $3, $4, $5, $6)',
+          [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text, text]
+        );
+
+        await bot.telegram.deleteMessage(chatId, feedback.message_id);
+        await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n🗂 Kategoriya: ${parsed.category || 'Boshqa'}`);
+      } catch (err: any) {
+        await bot.telegram.sendMessage(chatId, `❌ Xatolik: ${err.message}`);
       }
-
-      await query(
-        'INSERT INTO transactions (user_id, amount, type, category, note, voice_transcription) VALUES ($1, $2, $3, $4, $5, $6)',
-        [profile.id, parsed.amount, parsed.type, parsed.category, parsed.note || text, text]
-      );
-
-      await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount} ${profile.currency}\n🗂 Kategoriya: ${parsed.category}`);
     }
 
     // Handle Text
