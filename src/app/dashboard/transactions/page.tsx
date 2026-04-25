@@ -57,6 +57,9 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
+    // Har 10 soniyada ma'lumotlarni yangilab turish
+    const interval = setInterval(fetchTransactions, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleDelete = async (id: string) => {
