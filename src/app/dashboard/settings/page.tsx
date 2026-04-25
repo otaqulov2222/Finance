@@ -55,6 +55,11 @@ export default function SettingsPage() {
     }
   };
 
+  const handleLogout = () => {
+    document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    window.location.href = "/login";
+  };
+
   if (loading) return (
     <div className="flex h-full items-center justify-center">
       <Zap className="h-8 w-8 animate-pulse text-primary" />
@@ -170,7 +175,7 @@ export default function SettingsPage() {
 
         {/* Security & System */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 p-6 flex items-center gap-4 group cursor-pointer hover:bg-white/5 transition-all">
+          <Card onClick={handleLogout} className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 p-6 flex items-center gap-4 group cursor-pointer hover:bg-white/5 transition-all">
             <div className="rounded-xl bg-rose-500/20 p-3 text-rose-500 group-hover:scale-110 transition-transform">
               <LogOut className="h-6 w-6" />
             </div>
