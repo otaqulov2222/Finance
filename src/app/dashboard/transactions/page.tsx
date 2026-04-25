@@ -11,6 +11,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { 
   Download, 
   Search, 
@@ -19,7 +27,10 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Calendar,
-  FileText
+  FileText,
+  Pencil,
+  Trash2,
+  AlertCircle
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -27,8 +38,14 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchTransactions = () => {
+    setLoading(true);
     fetch('/api/transactions')
       .then(res => res.json())
       .then(d => {
@@ -36,7 +53,52 @@ export default function TransactionsPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchTransactions();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Ushbu amalni o'chirishni tasdiqlaysizmi?")) return;
+    
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTransactions(transactions.filter(t => t.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete", error);
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingId(item.id);
+    setEditForm({
+      amount: item.amount,
+      category: item.category,
+      note: item.note,
+      type: item.type
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      const res = await fetch(`/api/transactions/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      
+      if (res.ok) {
+        setIsEditDialogOpen(false);
+        fetchTransactions();
+      }
+    } catch (error) {
+      console.error("Failed to update", error);
+    }
+  };
 
   const exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(transactions);
@@ -57,7 +119,7 @@ export default function TransactionsPage() {
           <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
             Amallar Tarixi
           </h2>
-          <p className="text-muted-foreground font-medium">Barcha kirim va chiqimlarni nazorat qiling.</p>
+          <p className="text-muted-foreground font-medium">Kirim va chiqimlarni tahrirlash yoki o'chirish.</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={exportToExcel} className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-md">
@@ -67,7 +129,7 @@ export default function TransactionsPage() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-md group">
+        <div className="relative flex-1 max-w-md group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000"></div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -79,9 +141,6 @@ export default function TransactionsPage() {
             />
           </div>
         </div>
-        <Button variant="outline" className="border-white/10 bg-white/5 h-12 w-12 rounded-xl">
-          <Filter className="h-4 w-4" />
-        </Button>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-card/40 backdrop-blur-xl shadow-2xl overflow-hidden ring-1 ring-white/5">
@@ -92,13 +151,14 @@ export default function TransactionsPage() {
               <TableHead className="text-white font-bold"><FileText className="inline mr-2 h-4 w-4 text-primary" /> Kategoriya</TableHead>
               <TableHead className="text-white font-bold">Izoh</TableHead>
               <TableHead className="text-white font-bold">Tur</TableHead>
-              <TableHead className="text-right text-white font-bold pr-8">Miqdor</TableHead>
+              <TableHead className="text-right text-white font-bold">Miqdor</TableHead>
+              <TableHead className="text-right text-white font-bold pr-8">Amallar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-64 text-center">
+                <TableCell colSpan={6} className="h-64 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                     <p className="text-muted-foreground">Ma'lumotlar yuklanmoqda...</p>
@@ -107,11 +167,10 @@ export default function TransactionsPage() {
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-64 text-center">
+                <TableCell colSpan={6} className="h-64 text-center">
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <History className="h-16 w-16 mb-4 opacity-10" />
                     <p className="text-xl font-bold opacity-50">Hech qanday amal topilmadi</p>
-                    <p className="text-sm opacity-40">Telegram bot orqali birinchi amalingizni kiriting.</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -141,8 +200,28 @@ export default function TransactionsPage() {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-black text-white pr-8 text-lg tabular-nums">
+                  <TableCell className="text-right font-black text-white text-lg tabular-nums">
                     {item.type === 'expense' ? '-' : '+'}{Number(item.amount).toLocaleString()} UZS
+                  </TableCell>
+                  <TableCell className="text-right pr-8">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-xl bg-white/5 hover:bg-primary/20 hover:text-primary transition-colors border border-white/5"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-xl bg-white/5 hover:bg-rose-500/20 hover:text-rose-500 transition-colors border border-white/5"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -150,6 +229,72 @@ export default function TransactionsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit Modal */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="border-white/10 bg-black/90 backdrop-blur-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
+              Amalni tahrirlash
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-2">
+              <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-widest opacity-60">Summa</Label>
+              <Input 
+                id="amount" 
+                type="number"
+                value={editForm.amount} 
+                onChange={(e) => setEditForm({...editForm, amount: e.target.value})}
+                className="bg-white/5 border-white/10 h-12 focus:ring-primary/50 text-lg font-bold"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="category" className="text-xs font-bold uppercase tracking-widest opacity-60">Kategoriya</Label>
+              <Input 
+                id="category" 
+                value={editForm.category} 
+                onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                className="bg-white/5 border-white/10 h-12"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="note" className="text-xs font-bold uppercase tracking-widest opacity-60">Izoh</Label>
+              <Input 
+                id="note" 
+                value={editForm.note} 
+                onChange={(e) => setEditForm({...editForm, note: e.target.value})}
+                className="bg-white/5 border-white/10 h-12"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Turi</Label>
+              <div className="flex gap-2">
+                <Button 
+                  variant={editForm.type === 'income' ? 'default' : 'outline'}
+                  className={`flex-1 h-12 rounded-xl font-bold ${editForm.type === 'income' ? 'bg-emerald-500 hover:bg-emerald-600' : 'border-white/10'}`}
+                  onClick={() => setEditForm({...editForm, type: 'income'})}
+                >
+                  <ArrowUpCircle className="mr-2 h-4 w-4" /> Kirim
+                </Button>
+                <Button 
+                  variant={editForm.type === 'expense' ? 'default' : 'outline'}
+                  className={`flex-1 h-12 rounded-xl font-bold ${editForm.type === 'expense' ? 'bg-rose-500 hover:bg-rose-600' : 'border-white/10'}`}
+                  onClick={() => setEditForm({...editForm, type: 'expense'})}
+                >
+                  <ArrowDownCircle className="mr-2 h-4 w-4" /> Chiqim
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)} className="h-12 px-8 font-bold">Bekor qilish</Button>
+            <Button onClick={handleUpdate} className="bg-primary text-black font-bold h-12 px-8 hover:bg-emerald-400">
+              O'zgarishlarni saqlash
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
