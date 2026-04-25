@@ -70,10 +70,13 @@ export async function POST(req: NextRequest) {
 
         await bot.telegram.editMessageText(chatId, messageId, undefined, "Kategoriyani tanlang:", {
           reply_markup: {
-            inline_keyboard: categories.map(row => row.map(cat => ({
-              text: cat,
-              callback_data: `cat:${type}:${cat}`
-            })))
+            inline_keyboard: [
+              ...categories.map(row => row.map(cat => ({
+                text: cat,
+                callback_data: `cat:${type}:${cat}`
+              }))),
+              [{ text: "🏘 Asosiy menyu", callback_data: "menu" }]
+            ]
           }
         });
       }
@@ -91,7 +94,8 @@ export async function POST(req: NextRequest) {
                   callback_data: `save:${type}:${cat}:${amt}`
                 }))
               ),
-              [{ text: "⌨️ Boshqa summa yozish", callback_data: `manual:${type}:${cat}` }]
+              [{ text: "⌨️ Boshqa summa", callback_data: `manual:${type}:${cat}` }],
+              [{ text: "🏘 Asosiy menyu", callback_data: "menu" }]
             ]
           }
         });
@@ -105,7 +109,29 @@ export async function POST(req: NextRequest) {
         );
 
         const typeEmoji = type === 'income' ? '🟢 Kirim' : '🔴 Chiqim';
-        await bot.telegram.editMessageText(chatId, messageId, undefined, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${Number(amt).toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${cat}`);
+        // Send success as a new message
+        await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${Number(amt).toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${cat}`);
+        
+        // Show main menu again
+        await bot.telegram.sendMessage(chatId, "Yana nima kiritamiz?", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🔴 Chiqim (Xarajat)", callback_data: "type:expense" }, { text: "🟢 Kirim (Tushum)", callback_data: "type:income" }],
+              [{ text: "📊 Statistika", callback_data: "stats" }]
+            ]
+          }
+        });
+      }
+
+      else if (action === 'menu') {
+        await bot.telegram.editMessageText(chatId, messageId, undefined, "Asosiy menyu. Tanlang:", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🔴 Chiqim (Xarajat)", callback_data: "type:expense" }, { text: "🟢 Kirim (Tushum)", callback_data: "type:income" }],
+              [{ text: "📊 Statistika", callback_data: "stats" }]
+            ]
+          }
+        });
       }
 
       else if (action === 'manual') {
