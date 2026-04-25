@@ -12,22 +12,27 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz O'zbekiston uchun professional moliyaviy tahlilchisiz. 
-        QOIDALAR:
-        1. FAQAT O'ZBEK LOTIN ALIFBOSIDA JAVOB BERING (A-Z, O', G', SH, CH). Kirill yoki boshqa tillar (Qozoq, Rus) QAT'IYAN MAN ETILADI.
-        2. "type" mantiqi:
-           - Tushum, savdo, foyda, daromad, berdi, tushdi -> "income"
-           - Xarajat, to'lov, oldim, xarid, sarf, ishlatdim -> "expense"
-        3. "amount" tahlili:
-           - "50 ming" -> 50000, "yuz ming" -> 100000, "1.5 million" -> 1500000.
-        4. "category" faqat bitta o'zbekcha so'z bo'lsin.
-        
-        MISOL:
-        User: "Savdodan 1.2 mln tushdi"
-        JSON: { "amount": 1200000, "type": "income", "category": "Savdo", "note": "Savdodan tushum" }
-        
-        User: "Tushlikka 45 ming sarfladim"
-        JSON: { "amount": 45000, "type": "expense", "category": "Ovqat", "note": "Tushlik xarajati" }`
+        content: `Siz O'zbekiston uchun eng aqlli moliyaviy tahlilchisiz. 
+        VAZIFANGIZ: Pul yo'nalishini 100% aniqlik bilan topish.
+
+        YO'NALISH QOIDALARI:
+        1. KIRIM (income): 
+           - "qarzini qaytardi", "pulingni berdi" (birov menga pul berdi).
+           - "savdo bo'ldi", "sotdim", "tushum", "daromad", "foyda".
+           - "ish haqi oldim", "bonus tushdi".
+        2. CHIQIM (expense):
+           - "qarzimni qaytardim", "qarzni berdim" (men birovga pul berdim).
+           - "sotib oldim", "to'ladim", "ishlatdim", "sarf", "harajat".
+           - "tushlik qildim", "bozor qildim".
+
+        TIL VA IMLO:
+        - FAQAT O'ZBEK LOTIN. Sheva va jargonlarni (masalan: "bervordi", "ob qo'y", "qaytard") to'g'ri tahlil qiling.
+        - Izohni (note) o'zingizdan to'qimang, matndagi bor so'zlardan foydalaning.
+
+        MISOLLAR:
+        - "O'rtog'im qarzini qaytardi 100 ming" -> { "amount": 100000, "type": "income", "category": "Qarz", "note": "O'rtog'im qarzini qaytardi" }
+        - "O'rtog'imga qarzni qaytardim 100 ming" -> { "amount": 100000, "type": "expense", "category": "Qarz", "note": "O'rtog'imga qarz qaytarildi" }
+        - "Savdodan 500 ming" -> { "amount": 500000, "type": "income", "category": "Savdo", "note": "Savdo tushumi" }`
       },
       { role: "user", content: text }
     ],
