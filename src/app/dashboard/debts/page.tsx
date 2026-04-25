@@ -74,7 +74,7 @@ export default function DebtsPage() {
         fetchDebts();
       } else {
         const error = await res.json();
-        alert("Xatolik: " + (error.error || "Saqlashda muammo bo'ldi"));
+        alert("Xatolik: " + (error.error || "Saqlashda muammo bo'ldi") + (error.detail ? "\nSabab: " + error.detail : ""));
       }
     } catch (error) {
       console.error("Add error", error);
