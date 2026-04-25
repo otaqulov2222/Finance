@@ -88,15 +88,22 @@ export default function TransactionsPage() {
       const res = await fetch(`/api/transactions/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify({
+          ...editForm,
+          amount: Number(editForm.amount)
+        })
       });
       
       if (res.ok) {
         setIsEditDialogOpen(false);
         fetchTransactions();
+      } else {
+        const error = await res.json();
+        alert("Xatolik yuz berdi: " + (error.error || "Saqlab bo'lmadi"));
       }
     } catch (error) {
       console.error("Failed to update", error);
+      alert("Server bilan bog'lanishda xatolik!");
     }
   };
 
