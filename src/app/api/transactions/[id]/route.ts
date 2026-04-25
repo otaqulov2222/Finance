@@ -6,7 +6,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id);
+    const id = params.id; // UUID is a string
     await query('DELETE FROM transactions WHERE id = $1', [id]);
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -20,10 +20,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id);
+    const id = params.id; // UUID is a string
     const { amount, category, note, type } = await request.json();
     
-    // updated_at ni olib tashladik, chunki u bazada bo'lmasligi mumkin
     await query(`
       UPDATE transactions 
       SET amount = $1, category = $2, note = $3, type = $4
