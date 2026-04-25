@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
 
     // Handle Voice
     if (update.message.voice) {
+      await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda, iltimos kuting...");
+      
       const fileId = update.message.voice.file_id;
       const fileLink = await bot.telegram.getFileLink(fileId);
       
@@ -58,9 +60,11 @@ export async function POST(req: NextRequest) {
       const arrayBuffer = await res.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       
-      // Using a more compatible way for Groq file upload
+      // Convert Buffer to a Blob-like object that Groq accepts
+      const file = new File([buffer], "voice.ogg", { type: "audio/ogg" });
+      
       const transcription = await groq.audio.transcriptions.create({
-        file: await Groq.toFile(buffer, "voice.ogg"),
+        file: file,
         model: "whisper-large-v3",
       });
 
