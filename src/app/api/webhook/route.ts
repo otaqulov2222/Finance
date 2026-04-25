@@ -29,6 +29,8 @@ async function parseTransaction(text: string) {
         - FAQAT O'ZBEK LOTIN. Sheva va jargonlarni (masalan: "bervordi", "ob qo'y", "qaytard") to'g'ri tahlil qiling.
         - Izohni (note) o'zingizdan to'qimang, matndagi bor so'zlardan foydalaning.
 
+        JSON qoidalari: 
+        Faqat json formatida javob bering.
         MISOLLAR:
         - "O'rtog'im qarzini qaytardi 100 ming" -> { "amount": 100000, "type": "income", "category": "Qarz", "note": "O'rtog'im qarzini qaytardi" }
         - "O'rtog'imga qarzni qaytardim 100 ming" -> { "amount": 100000, "type": "expense", "category": "Qarz", "note": "O'rtog'imga qarz qaytarildi" }
