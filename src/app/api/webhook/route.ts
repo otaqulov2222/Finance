@@ -50,6 +50,71 @@ export async function POST(req: NextRequest) {
       await bot.telegram.sendMessage(chatId, "Xush kelibsiz! Siz uchun yangi profil yaratildi.");
     }
 
+    // Handle Callback Queries (Buttons)
+    if (update.callback_query) {
+      const data = update.callback_query.data;
+      const chatId = update.callback_query.message.chat.id;
+      const messageId = update.callback_query.message.message_id;
+
+      const [action, ...params] = data.split(':');
+
+      if (action === 'type') {
+        const type = params[0]; // income or expense
+        const categories = type === 'expense' 
+          ? [
+              ['🍳 Nonushta', '🍱 Tushlik', '🌙 Kechki ovqat'],
+              ['🚕 Taxi', '⛽️ Benzin', '🛒 Bozor'],
+              ['💡 Kommunal', '🎁 Sovg\'a', '➕ Boshqa']
+            ]
+          : [['💰 Savdo', '💵 Ish haqi', '📈 Foyda'], ['🔄 Qarz qaytdi', '➕ Boshqa']];
+
+        await bot.telegram.editMessageText(chatId, messageId, undefined, "Kategoriyani tanlang:", {
+          reply_markup: {
+            inline_keyboard: categories.map(row => row.map(cat => ({
+              text: cat,
+              callback_data: `cat:${type}:${cat}`
+            })))
+          }
+        });
+      }
+
+      else if (action === 'cat') {
+        const [type, cat] = params;
+        const amounts = [30000, 50000, 75000, 150000, 300000, 500000];
+        
+        await bot.telegram.editMessageText(chatId, messageId, undefined, `[${cat}] uchun summani tanlang:`, {
+          reply_markup: {
+            inline_keyboard: [
+              ...Array.from({ length: Math.ceil(amounts.length / 2) }, (_, i) => 
+                amounts.slice(i * 2, i * 2 + 2).map(amt => ({
+                  text: `${amt.toLocaleString()} UZS`,
+                  callback_data: `save:${type}:${cat}:${amt}`
+                }))
+              ),
+              [{ text: "⌨️ Boshqa summa yozish", callback_data: `manual:${type}:${cat}` }]
+            ]
+          }
+        });
+      }
+
+      else if (action === 'save') {
+        const [type, cat, amt] = params;
+        await query(
+          'INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)',
+          [profile.id, amt, type, cat, `Tugma orqali: ${cat}`]
+        );
+
+        const typeEmoji = type === 'income' ? '🟢 Kirim' : '🔴 Chiqim';
+        await bot.telegram.editMessageText(chatId, messageId, undefined, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${Number(amt).toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${cat}`);
+      }
+
+      else if (action === 'manual') {
+        await bot.telegram.sendMessage(chatId, `Iltimos, [${params[1]}] uchun summani yozib yuboring (Masalan: 125000)`);
+      }
+
+      return NextResponse.json({ ok: true });
+    }
+
     if (update.message.voice) {
       const feedback = await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda...");
       try {
@@ -62,7 +127,7 @@ export async function POST(req: NextRequest) {
         const transcription = await groq.audio.transcriptions.create({
           file: await Groq.toFile(buffer, "voice.ogg"),
           model: "whisper-large-v3",
-          language: "uz" // Force Uzbek language
+          language: "uz" 
         });
 
         const text = transcription.text;
@@ -83,11 +148,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Handle Text
     if (update.message.text) {
       const text = update.message.text;
       if (text === '/start') {
-        await bot.telegram.sendMessage(chatId, "Xush kelibsiz! Moliyaviy yordamchingiz tayyor. Ovozli yoki matnli xabaringizni kutaman.");
+        await bot.telegram.sendMessage(chatId, "Assalomu alaykum! Moliyaviy yordamchingiz tayyor. Quyidagilardan birini tanlang:", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🔴 Chiqim (Xarajat)", callback_data: "type:expense" }, { text: "🟢 Kirim (Tushum)", callback_data: "type:income" }],
+              [{ text: "📊 Statistika", callback_data: "stats" }]
+            ]
+          }
+        });
       } else {
         try {
           const parsed = await parseTransaction(text);
@@ -99,7 +170,7 @@ export async function POST(req: NextRequest) {
             const typeEmoji = parsed.type === 'income' ? '🟢 Kirim (Tushum)' : '🔴 Chiqim (Xarajat)';
             await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
           } else {
-            await bot.telegram.sendMessage(chatId, "Tushunmadim. Iltimos, miqdorni ham ayting (Masalan: 50 ming).");
+            await bot.telegram.sendMessage(chatId, "Tushunmadim, iltimos miqdorni ham ayting.");
           }
         } catch (err) {
           await bot.telegram.sendMessage(chatId, "Xatolik yuz berdi.");
