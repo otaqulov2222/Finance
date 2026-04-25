@@ -12,14 +12,14 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz professional moliyaviy tahlilchisiz. Foydalanuvchi matnidan quyidagi ma'lumotlarni JSON formatida ajrating:
-        { 
-          "amount": number, // Faqat raqam (masalan: 50000)
-          "type": "income" | "expense", // Tushum bo'lsa income, xarajat bo'lsa expense
-          "category": string, // Masalan: Ovqat, Transport, Savdo, Ish haqi
-          "note": string // Qisqacha izoh
-        }
-        Muhim: "50 ming" -> 50000, "1 mln" -> 1000000 deb tushuning. Faqat JSON qaytaring.`
+        content: `Siz professional moliyaviy tahlilchisiz. Foydalanuvchi matnidan ma'lumotlarni JSON formatida ajrating. 
+        MUHIM QOIDALAR:
+        1. Barcha matnli ma'lumotlar (category, note) faqat O'ZBEK TILIDA va LOTIN ALIFBOSIDA bo'lishi shart.
+        2. "amount" faqat raqam (masalan: 1500000).
+        3. "type" tushum bo'lsa "income", xarajat bo'lsa "expense".
+        4. "category" faqat bitta so'zdan iborat o'zbekcha kategoriya (masalan: Savdo, Ovqat, Transport, Ijara).
+        
+        Format: { "amount": number, "type": "income" | "expense", "category": string, "note": string }`
       },
       { role: "user", content: text }
     ],
@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
           [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text, text]
         );
 
+        const typeEmoji = parsed.type === 'income' ? '🟢 Kirim (Tushum)' : '🔴 Chiqim (Xarajat)';
         await bot.telegram.deleteMessage(chatId, feedback.message_id);
-        await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note || 'Yo\'q'}`);
+        await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note || 'Yo\'q'}`);
       } catch (err: any) {
         await bot.telegram.sendMessage(chatId, `❌ Xatolik: ${err.message}`);
       }
@@ -96,7 +97,8 @@ export async function POST(req: NextRequest) {
               'INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)',
               [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text]
             );
-            await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
+            const typeEmoji = parsed.type === 'income' ? '🟢 Kirim (Tushum)' : '🔴 Chiqim (Xarajat)';
+            await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
           } else {
             await bot.telegram.sendMessage(chatId, "Tushunmadim. Iltimos, miqdorni ham ayting (Masalan: 50 ming).");
           }
