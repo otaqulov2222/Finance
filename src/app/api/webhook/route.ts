@@ -12,29 +12,16 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz O'zbekiston uchun eng aqlli moliyaviy tahlilchisiz. 
-        VAZIFANGIZ: Pul yo'nalishini 100% aniqlik bilan topish.
+        content: `Siz O'zbekiston uchun professional moliyaviy tahlilchisiz. 
+        VAZIFANGIZ: O'zbek shevalaridagi (masalan: ming/bin, olti/alti) va jargonlardagi xabarlarni toza o'zbek lotin alifbosiga o'girib, JSON formatida saqlash.
 
-        YO'NALISH QOIDALARI:
-        1. KIRIM (income): 
-           - "qarzini qaytardi", "pulingni berdi" (birov menga pul berdi).
-           - "savdo bo'ldi", "sotdim", "tushum", "daromad", "foyda".
-           - "ish haqi oldim", "bonus tushdi".
-        2. CHIQIM (expense):
-           - "qarzimni qaytardim", "qarzni berdim" (men birovga pul berdim).
-           - "sotib oldim", "to'ladim", "ishlatdim", "sarf", "harajat".
-           - "tushlik qildim", "bozor qildim".
+        QOIDALAR:
+        1. "amount": Matndagi sonni raqamga o'giring (masalan: "besh ming olti" -> 5006).
+        2. "type": "income" (tushum, qaytardi, berdi) yoki "expense" (xarajat, oldim, sarf).
+        3. "category": Toza o'zbekcha kategoriya (Savdo, Ovqat, Qarz, Shaxsiy).
+        4. "note": Matndagi xatolarni to'g'irlab, chiroyli o'zbek tilida yozing (masalan: "Ortaok karzini qaytardi" -> "O'rtog'im qarzini qaytardi").
 
-        TIL VA IMLO:
-        - FAQAT O'ZBEK LOTIN. Sheva va jargonlarni (masalan: "bervordi", "ob qo'y", "qaytard") to'g'ri tahlil qiling.
-        - Izohni (note) o'zingizdan to'qimang, matndagi bor so'zlardan foydalaning.
-
-        JSON qoidalari: 
-        Faqat json formatida javob bering.
-        MISOLLAR:
-        - "O'rtog'im qarzini qaytardi 100 ming" -> { "amount": 100000, "type": "income", "category": "Qarz", "note": "O'rtog'im qarzini qaytardi" }
-        - "O'rtog'imga qarzni qaytardim 100 ming" -> { "amount": 100000, "type": "expense", "category": "Qarz", "note": "O'rtog'imga qarz qaytarildi" }
-        - "Savdodan 500 ming" -> { "amount": 500000, "type": "income", "category": "Savdo", "note": "Savdo tushumi" }`
+        Til: FAQAT O'ZBEK LOTIN. Kirill yoki boshqa tillar taqiqlanadi. Faqat json qaytaring.`
       },
       { role: "user", content: text }
     ],
@@ -53,7 +40,6 @@ export async function POST(req: NextRequest) {
     
     if (!chatId || !userId) return NextResponse.json({ ok: true });
 
-    // Find profile
     let { rows } = await query('SELECT * FROM profiles WHERE telegram_id = $1', [userId]);
     let profile = rows[0];
 
@@ -66,7 +52,6 @@ export async function POST(req: NextRequest) {
       await bot.telegram.sendMessage(chatId, "Xush kelibsiz! Siz uchun yangi profil yaratildi.");
     }
 
-    // Handle Voice
     if (update.message.voice) {
       const feedback = await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda...");
       try {
@@ -79,6 +64,7 @@ export async function POST(req: NextRequest) {
         const transcription = await groq.audio.transcriptions.create({
           file: await Groq.toFile(buffer, "voice.ogg"),
           model: "whisper-large-v3",
+          language: "uz" // Force Uzbek language
         });
 
         const text = transcription.text;
@@ -93,7 +79,7 @@ export async function POST(req: NextRequest) {
 
         const typeEmoji = parsed.type === 'income' ? '🟢 Kirim (Tushum)' : '🔴 Chiqim (Xarajat)';
         await bot.telegram.deleteMessage(chatId, feedback.message_id);
-        await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note || 'Yo\'q'}`);
+        await bot.telegram.sendMessage(chatId, `✅ Muvaffaqiyatli saqlandi!\n\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n📊 Turi: ${typeEmoji}\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
       } catch (err: any) {
         await bot.telegram.sendMessage(chatId, `❌ Xatolik: ${err.message}`);
       }
