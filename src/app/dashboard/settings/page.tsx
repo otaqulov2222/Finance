@@ -5,116 +5,189 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { 
-  User, 
   Building2, 
   Bell, 
-  ShieldCheck, 
-  Zap,
+  Wallet, 
+  LogOut, 
   Save,
-  LogOut
+  Globe,
+  ShieldCheck,
+  Zap
 } from "lucide-react";
 
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    business_name: "",
+    currency: "UZS",
+    daily_report: true,
+    large_expenses: false
+  });
 
   useEffect(() => {
-    fetch('/api/profile')
+    fetch('/api/settings')
       .then(res => res.json())
-      .then(d => {
-        setProfile(d);
+      .then(data => {
+        setSettings(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      if (res.ok) {
+        alert("Sozlamalar muvaffaqiyatli saqlandi! ✨");
+      }
+    } catch (error) {
+      alert("Xatolik yuz berdi!");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="flex h-full items-center justify-center">
+      <Zap className="h-8 w-8 animate-pulse text-primary" />
+    </div>
+  );
+
   return (
-    <div className="max-w-4xl space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-4xl space-y-8 animate-in fade-in duration-700 pb-12">
       <div className="flex flex-col gap-2">
         <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-          System Settings
+          Tizim Sozlamalari
         </h2>
         <p className="text-muted-foreground font-medium">Profil va biznes ma'lumotlarini boshqarish.</p>
       </div>
 
       <div className="grid gap-6">
-        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-          <CardHeader className="border-b border-white/5 pb-6">
+        {/* Business Info */}
+        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 overflow-hidden">
+          <CardHeader className="border-b border-white/5 bg-white/5">
             <div className="flex items-center gap-4">
-              <div className="rounded-2xl bg-primary/20 p-4 ring-1 ring-primary/40">
-                <Building2 className="h-6 w-6 text-primary" />
+              <div className="rounded-xl bg-primary/20 p-2.5">
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Biznes Ma'lumotlari</CardTitle>
-                <CardDescription>Barcha hisobotlarda ko'rinadigan biznes nomi.</CardDescription>
+                <CardTitle className="text-lg">Biznes Ma'lumotlari</CardTitle>
+                <CardDescription>Hisobotlarda ko'rinadigan asosiy ma'lumotlar.</CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
+          <CardContent className="pt-8 space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="businessName" className="text-xs font-bold uppercase tracking-widest opacity-60">Biznes Nomi</Label>
+                <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Biznes Nomi</Label>
                 <Input 
-                  id="businessName" 
-                  defaultValue={profile?.business_name || "Yuklanmoqda..."} 
-                  className="bg-white/5 border-white/10 h-12 focus:ring-primary/50"
+                  value={settings.business_name} 
+                  onChange={(e) => setSettings({...settings, business_name: e.target.value})}
+                  className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-primary/50" 
+                  placeholder="Masalan: UzFinance Pro"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="currency" className="text-xs font-bold uppercase tracking-widest opacity-60">Asosiy Valyuta</Label>
-                <Input 
-                  id="currency" 
-                  defaultValue="O'zbek so'mi (UZS)" 
-                  disabled 
-                  className="bg-white/5 border-white/10 h-12 opacity-50"
-                />
+                <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Asosiy Valyuta</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={settings.currency === 'UZS' ? 'default' : 'outline'}
+                    className={`flex-1 h-12 rounded-xl font-bold ${settings.currency === 'UZS' ? 'bg-primary text-black' : 'border-white/10 bg-white/5'}`}
+                    onClick={() => setSettings({...settings, currency: 'UZS'})}
+                  >
+                    UZS (So'm)
+                  </Button>
+                  <Button 
+                    variant={settings.currency === 'USD' ? 'default' : 'outline'}
+                    className={`flex-1 h-12 rounded-xl font-bold ${settings.currency === 'USD' ? 'bg-primary text-black' : 'border-white/10 bg-white/5'}`}
+                    onClick={() => setSettings({...settings, currency: 'USD'})}
+                  >
+                    USD (Dollar)
+                  </Button>
+                </div>
               </div>
             </div>
-            <Button className="bg-primary text-black font-bold h-12 px-8 hover:bg-emerald-400 shadow-lg shadow-primary/20">
-              <Save className="mr-2 h-4 w-4" /> Saqlash
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-          <CardHeader className="border-b border-white/5 pb-6">
-            <div className="flex items-center gap-4">
-              <div className="rounded-2xl bg-blue-500/20 p-4 ring-1 ring-blue-500/40">
-                <Bell className="h-6 w-6 text-blue-400" />
-              </div>
-              <div>
-                <CardTitle>Bildirishnomalar</CardTitle>
-                <CardDescription>Telegram bot orqali keladigan hisobotlar.</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-              <div className="space-y-0.5">
-                <p className="text-sm font-bold">Kunlik Hisobot</p>
-                <p className="text-xs text-muted-foreground">Har kuni soat 20:00 da bot orqali xulosa olish.</p>
-              </div>
-              <div className="h-6 w-11 rounded-full bg-primary/40 relative">
-                <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-primary shadow-sm" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-              <div className="space-y-0.5">
-                <p className="text-sm font-bold">Katta Xarajatlar</p>
-                <p className="text-xs text-muted-foreground">1 mln so'mdan oshgan xarajatlarda ogohlantirish.</p>
-              </div>
-              <div className="h-6 w-11 rounded-full bg-white/10 relative">
-                <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white/40 shadow-sm" />
-              </div>
+            <div className="pt-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={saving}
+                className="bg-primary text-black font-bold h-12 px-8 rounded-xl hover:bg-emerald-400 shadow-lg shadow-primary/20 transition-all active:scale-95"
+              >
+                {saving ? "Saqlanmoqda..." : <><Save className="mr-2 h-4 w-4" /> Saqlash</>}
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        <div className="pt-4">
-          <Button variant="outline" className="w-full h-14 border-rose-500/20 bg-rose-500/5 text-rose-500 hover:bg-rose-500/10 rounded-2xl font-bold uppercase tracking-widest">
-            <LogOut className="mr-2 h-4 w-4" /> Tizimdan chiqish
-          </Button>
+        {/* Notifications */}
+        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 overflow-hidden">
+          <CardHeader className="border-b border-white/5 bg-white/5">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-blue-500/20 p-2.5">
+                <Bell className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Bildirishnomalar</CardTitle>
+                <CardDescription>Telegram bot orqali keladigan hisobotlar sozlamasi.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-8 space-y-6">
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 transition-colors hover:bg-white/10">
+              <div className="space-y-0.5">
+                <Label className="text-base font-bold">Kunlik Hisobot</Label>
+                <p className="text-sm text-muted-foreground">Har kuni soat 20:00 da bot orqali xulosa olish.</p>
+              </div>
+              <Switch 
+                checked={settings.daily_report} 
+                onCheckedChange={(val) => {
+                  const newSettings = {...settings, daily_report: val};
+                  setSettings(newSettings);
+                  // Optionally save immediately
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 transition-colors hover:bg-white/10">
+              <div className="space-y-0.5">
+                <Label className="text-base font-bold">Katta Xarajatlar</Label>
+                <p className="text-sm text-muted-foreground">1 mln so'mdan oshgan xarajatlarda ogohlantirish.</p>
+              </div>
+              <Switch 
+                checked={settings.large_expenses}
+                onCheckedChange={(val) => setSettings({...settings, large_expenses: val})}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security & System */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 p-6 flex items-center gap-4 group cursor-pointer hover:bg-white/5 transition-all">
+            <div className="rounded-xl bg-rose-500/20 p-3 text-rose-500 group-hover:scale-110 transition-transform">
+              <LogOut className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="font-bold">Tizimdan Chiqish</p>
+              <p className="text-xs text-muted-foreground">Sessiyani xavfsiz yakunlash.</p>
+            </div>
+          </Card>
+          <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 p-6 flex items-center gap-4 group cursor-pointer hover:bg-white/5 transition-all border-dashed border-primary/20 border-2">
+            <div className="rounded-xl bg-primary/20 p-3 text-primary group-hover:scale-110 transition-transform">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="font-bold text-primary">Admin Paneli</p>
+              <p className="text-xs text-muted-foreground">Tizimni to'liq boshqarish (Tez kunda).</p>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
