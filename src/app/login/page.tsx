@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TrendingUp, Lock, User, Zap } from "lucide-react";
+import { TrendingUp, Lock, User, Zap, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -20,8 +21,11 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // Oddiy va xavfsiz tekshiruv (Cookie orqali)
-    if (login === "Data365" && password === "admin 365") {
+    // Trim orqali ortiqcha bo'sh joylarni tozalaymiz
+    const cleanLogin = login.trim();
+    const cleanPassword = password.trim();
+
+    if (cleanLogin === "Data365" && cleanPassword === "admin 365") {
       document.cookie = "isLoggedIn=true; path=/; max-age=86400"; // 24 soat
       router.push("/dashboard");
     } else {
@@ -49,11 +53,11 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Login</Label>
               <div className="relative group">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input 
                   value={login}
                   onChange={(e) => setLogin(e.target.value)}
-                  className="bg-white/5 border-white/10 h-12 pl-10 rounded-xl focus:ring-primary/50 transition-all" 
+                  className="bg-white/5 border-white/10 h-14 pl-12 rounded-xl focus:ring-primary/50 transition-all text-base" 
                   placeholder="Data365"
                   required
                 />
@@ -62,28 +66,35 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-widest opacity-60 ml-1">Parol</Label>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input 
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-white/5 border-white/10 h-12 pl-10 rounded-xl focus:ring-primary/50 transition-all" 
+                  className="bg-white/5 border-white/10 h-14 pl-12 pr-12 rounded-xl focus:ring-primary/50 transition-all text-base" 
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold flex items-center gap-2 animate-shake">
-                <Zap className="h-4 w-4" /> {error}
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm font-bold flex items-center gap-3 animate-shake">
+                <Zap className="h-5 w-5 fill-rose-500" /> {error}
               </div>
             )}
 
             <Button 
               type="submit" 
               disabled={loading}
-              className="w-full h-12 bg-primary text-black font-black uppercase tracking-widest rounded-xl hover:bg-emerald-400 shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+              className="w-full h-14 bg-primary text-black font-black uppercase tracking-widest rounded-xl hover:bg-emerald-400 shadow-lg shadow-primary/20 transition-all active:scale-[0.98] text-base"
             >
               {loading ? "Kirilmoqda..." : "Kirish"}
             </Button>
