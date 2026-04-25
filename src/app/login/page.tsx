@@ -25,7 +25,7 @@ export default function LoginPage() {
     const cleanLogin = login.trim();
     const cleanPassword = password.trim();
 
-    if (cleanLogin === "Data365" && cleanPassword === "admin 365") {
+    if (cleanLogin === "Data365" && cleanPassword === "admin365") {
       document.cookie = "isLoggedIn=true; path=/; max-age=86400"; // 24 soat
       router.push("/dashboard");
     } else {
