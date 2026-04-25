@@ -12,7 +12,14 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: "Siz moliya bo'yicha yordamchisiz. Foydalanuvchi matnidan tranzaksiya ma'lumotlarini JSON formatida ajratib oling. Format: { \"amount\": number, \"type\": \"income\" | \"expense\", \"category\": string | null, \"note\": string | null }. Agar kategoriya aniq bo'lmasa, null qaytaring. Faqat JSON qaytaring."
+        content: `Siz professional moliyaviy tahlilchisiz. Foydalanuvchi matnidan quyidagi ma'lumotlarni JSON formatida ajrating:
+        { 
+          "amount": number, // Faqat raqam (masalan: 50000)
+          "type": "income" | "expense", // Tushum bo'lsa income, xarajat bo'lsa expense
+          "category": string, // Masalan: Ovqat, Transport, Savdo, Ish haqi
+          "note": string // Qisqacha izoh
+        }
+        Muhim: "50 ming" -> 50000, "1 mln" -> 1000000 deb tushuning. Faqat JSON qaytaring.`
       },
       { role: "user", content: text }
     ],
@@ -29,15 +36,10 @@ export async function POST(req: NextRequest) {
     const chatId = update.message?.chat?.id;
     const userId = update.message?.from?.id;
     
-    if (!chatId || !userId) {
-      return NextResponse.json({ ok: true });
-    }
+    if (!chatId || !userId) return NextResponse.json({ ok: true });
 
     // Find profile
-    let { rows } = await query(
-      'SELECT * FROM profiles WHERE telegram_id = $1',
-      [userId]
-    );
+    let { rows } = await query('SELECT * FROM profiles WHERE telegram_id = $1', [userId]);
     let profile = rows[0];
 
     if (!profile) {
@@ -52,18 +54,13 @@ export async function POST(req: NextRequest) {
     // Handle Voice
     if (update.message.voice) {
       const feedback = await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda...");
-      
       try {
         const fileId = update.message.voice.file_id;
         const fileLink = await bot.telegram.getFileLink(fileId);
-        
         const res = await fetch(fileLink.href);
-        if (!res.ok) throw new Error("Telegramdan faylni yuklab bo'lmadi");
-        
         const arrayBuffer = await res.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         
-        // Use a more direct way to send buffer to Groq
         const transcription = await groq.audio.transcriptions.create({
           file: await Groq.toFile(buffer, "voice.ogg"),
           model: "whisper-large-v3",
@@ -72,10 +69,7 @@ export async function POST(req: NextRequest) {
         const text = transcription.text;
         const parsed = await parseTransaction(text);
 
-        if (!parsed.amount) {
-          await bot.telegram.sendMessage(chatId, `⚠️ Miqdorni aniqlab bo'lmadi. Matn: "${text}"`);
-          return NextResponse.json({ ok: true });
-        }
+        if (!parsed.amount) throw new Error("Miqdorni aniqlab bo'lmadi");
 
         await query(
           'INSERT INTO transactions (user_id, amount, type, category, note, voice_transcription) VALUES ($1, $2, $3, $4, $5, $6)',
@@ -83,7 +77,7 @@ export async function POST(req: NextRequest) {
         );
 
         await bot.telegram.deleteMessage(chatId, feedback.message_id);
-        await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n🗂 Kategoriya: ${parsed.category || 'Boshqa'}`);
+        await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note || 'Yo\'q'}`);
       } catch (err: any) {
         await bot.telegram.sendMessage(chatId, `❌ Xatolik: ${err.message}`);
       }
@@ -92,24 +86,22 @@ export async function POST(req: NextRequest) {
     // Handle Text
     if (update.message.text) {
       const text = update.message.text;
-      
       if (text === '/start') {
-        await bot.telegram.sendMessage(chatId, "Xush kelibsiz! Men sizning moliyaviy yordamchingizman. Ovozli yoki matnli xabar yuboring.");
-      } else if (text.includes("qancha foyda")) {
-        const { rows: trans } = await query(
-          'SELECT amount, type FROM transactions WHERE user_id = $1',
-          [profile.id]
-        );
-        const profit = (trans || []).reduce((acc, t) => t.type === 'income' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
-        await bot.telegram.sendMessage(chatId, `Sizning umumiy balansingiz: ${profit} ${profile.currency}`);
+        await bot.telegram.sendMessage(chatId, "Xush kelibsiz! Moliyaviy yordamchingiz tayyor. Ovozli yoki matnli xabaringizni kutaman.");
       } else {
-        const parsed = await parseTransaction(text);
-        if (parsed.amount) {
-          await query(
-            'INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)',
-            [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text]
-          );
-          await bot.telegram.sendMessage(chatId, "✅ Saqlandi!");
+        try {
+          const parsed = await parseTransaction(text);
+          if (parsed.amount) {
+            await query(
+              'INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)',
+              [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || text]
+            );
+            await bot.telegram.sendMessage(chatId, `✅ Saqlandi!\n💰 Miqdor: ${parsed.amount.toLocaleString()} UZS\n🗂 Kategoriya: ${parsed.category}\n📝 Izoh: ${parsed.note}`);
+          } else {
+            await bot.telegram.sendMessage(chatId, "Tushunmadim. Iltimos, miqdorni ham ayting (Masalan: 50 ming).");
+          }
+        } catch (err) {
+          await bot.telegram.sendMessage(chatId, "Xatolik yuz berdi.");
         }
       }
     }
