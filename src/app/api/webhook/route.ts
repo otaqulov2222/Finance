@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       
       // Using a more compatible way for Groq file upload
       const transcription = await groq.audio.transcriptions.create({
-        file: await groq.toFile(buffer, "voice.ogg"),
+        file: await Groq.toFile(buffer, "voice.ogg"),
         model: "whisper-large-v3",
       });
 
