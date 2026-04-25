@@ -105,6 +105,14 @@ export async function POST(req: NextRequest) {
           [profile.id, amt, type, cat, `Tugma orqali: ${cat}`]
         );
         const typeEmoji = type === 'income' ? '🟢 <b>Kirim</b>' : '🔴 <b>Chiqim</b>';
+        
+        // Eski tugmalarni o'chirib yuboramiz
+        try {
+          await bot.telegram.deleteMessage(chatId, messageId);
+        } catch (e) {
+          console.error("Delete error:", e);
+        }
+
         await bot.telegram.sendMessage(chatId, `<b>Muvaffaqiyatli saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${Number(amt).toLocaleString()} UZS\n📊 <b>Turi:</b> ${typeEmoji}\n🗂 <b>Kategoriya:</b> ${cat}\n\n<i>Dashboardda yangilandi.</i> 📈`, { parse_mode: 'HTML', ...mainKeyboard });
       }
 
