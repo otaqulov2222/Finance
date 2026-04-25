@@ -83,7 +83,7 @@ export function Sidebar() {
               Bot orqali tahlillarni boshlang.
             </p>
             <a 
-              href="https://t.me/UzFinance_bot" 
+              href="https://t.me/uz_finance_manager_bot" 
               target="_blank" 
               rel="noopener noreferrer"
               className="block w-full py-2.5 rounded-lg bg-primary text-black text-center text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-lg shadow-primary/20"
