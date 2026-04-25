@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    if (update.message.voice) {
+    if (update.message?.voice) {
       const feedback = await bot.telegram.sendMessage(chatId, "🎤 Ovoz tahlil qilinmoqda...");
       try {
         const fileId = update.message.voice.file_id;
@@ -130,7 +130,8 @@ export async function POST(req: NextRequest) {
         const parsed = await parseTransaction(transcription.text);
         if (!parsed.amount) {
           await bot.telegram.deleteMessage(chatId, feedback.message_id);
-          return await bot.telegram.sendMessage(chatId, "⚠️ <b>Summani aniqlab bo'lmadi.</b>\nIltimos, summani aniqroq ayting (Masalan: 'Osh uchun 50 ming').", { parse_mode: 'HTML' });
+          await bot.telegram.sendMessage(chatId, "⚠️ <b>Summani aniqlab bo'lmadi.</b>\nIltimos, summani aniqroq ayting (Masalan: 'Osh uchun 50 ming').", { parse_mode: 'HTML' });
+          return NextResponse.json({ ok: true });
         }
 
         await query(
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (update.message.text) {
+    if (update.message?.text) {
       const text = update.message.text;
       if (text === '/start') {
         await bot.telegram.sendMessage(chatId, "Assalomu alaykum! Moliyaviy yordamchingiz tayyor. Tanlang:", {
