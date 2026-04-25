@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const update = body;
 
-    const chatId = update.message?.chat?.id;
-    const userId = update.message?.from?.id;
+    const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id;
+    const userId = update.message?.from?.id || update.callback_query?.from?.id;
     
     if (!chatId || !userId) return NextResponse.json({ ok: true });
 
