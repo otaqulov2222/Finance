@@ -3,44 +3,38 @@
 Welcome to your production-ready finance management system. This application consists of a powerful Telegram Bot for voice-based entry and a professional Web Dashboard for deep analytics.
 
 ## 1. Prerequisites
-- **Supabase Account**: Create a project and obtain your URL, Anon Key, and Service Role Key.
-- **OpenAI Account**: Get an API Key (requires GPT-4o and Whisper access).
-- **Telegram Bot**: Create a new bot via @BotFather and get the Token.
+- **Render Account**: For Hosting and PostgreSQL database.
+- **Groq AI Account**: For free Voice-to-Text and Intent Recognition.
+- **Telegram Bot**: Created via @BotFather.
 
 ## 2. Database Setup
-1. Go to your Supabase Dashboard.
-2. Open the **SQL Editor**.
-3. Copy the contents of `schema.sql` (found in the root directory) and run it.
-   - This will create `profiles`, `transactions`, and `debts` tables.
-   - It also sets up Row Level Security (RLS).
+The database is hosted on **Render PostgreSQL**. 
+- The schema is already initialized using `schema.sql`.
+- It contains `profiles`, `transactions`, and `debts` (Nasiya Daftari) tables.
 
 ## 3. Environment Variables
-1. Rename `.env.local.example` to `.env.local`.
-2. Fill in your credentials:
-   - `TELEGRAM_BOT_TOKEN`: From BotFather.
-   - `OPENAI_API_KEY`: From OpenAI.
-   - `NEXT_PUBLIC_SUPABASE_URL`: From Supabase Settings > API.
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: From Supabase Settings > API.
-   - `SUPABASE_SERVICE_ROLE_KEY`: From Supabase Settings > API (Keep this secret!).
+The following variables must be set in your hosting environment (Render/Vercel):
+- `TELEGRAM_BOT_TOKEN`: Your bot token from BotFather.
+- `GROQ_API_KEY`: Your free API key from Groq Console.
+- `DATABASE_URL`: Your PostgreSQL connection string.
 
 ## 4. Telegram Webhook Setup
-The bot uses a Webhook for real-time responses. Once you deploy your application (e.g., to Vercel), set your webhook by visiting:
+The bot uses a Webhook for real-time responses. Once deployed, set your webhook by visiting:
 `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_DEPLOYED_URL>/api/webhook`
 
-## 5. Running Locally
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to see your dashboard.
+## 5. How to Use
+### A. Telegram Bot (The Assistant)
+- **Voice Entry**: Send a voice note like *"Bugun savdodan 1.5 mln tushdi"* or *"Xarajat: tushlik uchun 40 ming"*.
+- **Text Entry**: Simply type your transaction details.
+- **AI Processing**: The bot uses **Groq Whisper** for transcription and **Llama 3** for intent extraction.
 
-## 6. How to Use
-- **Voice Entry**: Send a voice note like *"Bugun tushlik uchun 50 ming so'm sarfladim"* to the bot.
-- **Text Entry**: Type *"Sotuvdan 1 mln tushdi"*.
-- **Querying**: Ask the bot *"Bu hafta qancha foyda qildik?"*.
-- **Dashboard**: Use the web interface to edit transactions, export to Excel, and track debts in the **Nasiya Daftari**.
+### B. Web Dashboard (The Analytics)
+- **Overview**: View total balance, monthly income, and expense trends.
+- **Transactions**: Manage all records in a sophisticated table with Export to Excel.
+- **Nasiya Daftari**: Track debts and payment statuses.
 
-## Key Features
-- **AI Intent Recognition**: Automatically detects if a transaction is income or expense.
-- **Voice-to-Text**: High accuracy Uzbek transcription via Whisper.
-- **Nasiya Daftari**: Dedicated debt management with due date tracking.
-- **Sophisticated UI**: Dark-themed, high-performance dashboard with Recharts.
+## Tech Stack
+- **Frontend**: Next.js 14 (App Router), Tailwind CSS, Shadcn/UI.
+- **AI**: Groq SDK (Whisper-large-v3, Llama3-70b).
+- **Database**: PostgreSQL (Render).
+- **Charts**: Recharts.
