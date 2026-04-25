@@ -12,16 +12,14 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz O'zbekiston uchun professional moliyaviy tahlilchisiz. 
-        VAZIFANGIZ: O'zbek shevalaridagi (masalan: ming/bin, olti/alti) va jargonlardagi xabarlarni toza o'zbek lotin alifbosiga o'girib, JSON formatida saqlash.
-
-        QOIDALAR:
-        1. "amount": Matndagi sonni raqamga o'giring (masalan: "besh ming olti" -> 5006).
-        2. "type": "income" (tushum, qaytardi, berdi) yoki "expense" (xarajat, oldim, sarf).
-        3. "category": Toza o'zbekcha kategoriya (Savdo, Ovqat, Qarz, Shaxsiy).
-        4. "note": Matndagi xatolarni to'g'irlab, chiroyli o'zbek tilida yozing (masalan: "Ortaok karzini qaytardi" -> "O'rtog'im qarzini qaytardi").
-
-        Til: FAQAT O'ZBEK LOTIN. Kirill yoki boshqa tillar taqiqlanadi. Faqat json qaytaring.`
+        content: `Siz professional moliyaviy tahlilchisiz. 
+        MUHIM QOIDALAR:
+        1. Agar foydalanuvchi xabarida pul yo'nalishi aniq aytilmagan bo'lsa (masalan: faqat "Qarz 50000"), uni avtomatik ravishda "expense" (Chiqim) deb oling.
+        2. "income" (Kirim) deb faqat "tushdi", "foyda", "qaytdi", "berdi" kabi so'zlar bo'lsagina hisoblang.
+        3. Izoh (note) qismiga o'zingizdan "qaytdi" yoki "tushdi" kabi fe'llarni qo'shmang. Matnda nima bo'lsa shuni lotin alifbosida tozalab yozing.
+        4. "amount": Sonlarni aniq tushuning (ming=000).
+        
+        Til: FAQAT O'ZBEK LOTIN. Faqat json qaytaring.`
       },
       { role: "user", content: text }
     ],
