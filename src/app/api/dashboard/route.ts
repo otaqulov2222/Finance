@@ -1,25 +1,25 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic'; // API keshda qolib ketmasligi uchun
+
 export async function GET() {
   try {
-    // 1. Markaziy Bankdan real vaqtda USD kursini olish
-    let usdRate = 12500; // Default
+    // 1. CBU dan kursni olish
+    let usdRate = 12600;
     try {
-      const cbuRes = await fetch('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/');
+      const cbuRes = await fetch('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/', { cache: 'no-store' });
       const cbuData = await cbuRes.json();
       if (cbuData && cbuData[0]) {
         usdRate = parseFloat(cbuData[0].Rate);
       }
-    } catch (e) {
-      console.error("CBU Fetch error:", e);
-    }
+    } catch (e) {}
 
-    // 2. Sozlamalarni olish
-    const settingsResult = await query('SELECT * FROM settings LIMIT 1');
-    const settings = settingsResult.rows[0] || { currency: 'UZS', business_name: 'Mening Biznesim' };
+    // 2. Bazadan ENG OXIRGI sozlamalarni olish (ID: 1)
+    const settingsResult = await query('SELECT currency FROM settings WHERE id = 1');
+    const dbCurrency = settingsResult.rows[0]?.currency || 'UZS';
 
-    // 3. Moliyaviy ma'lumotlarni hisoblash
+    // 3. Statistikani hisoblash
     const statsResult = await query(`
       SELECT 
         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as income,
@@ -30,7 +30,7 @@ export async function GET() {
     const { income, expense } = statsResult.rows[0];
     const balance = Number(income) - Number(expense);
 
-    // 4. Grafik uchun oxirgi 7 kunlik ma'lumotlar
+    // 4. Haftalik ma'lumotlar
     const chartResult = await query(`
       SELECT 
         TO_CHAR(created_at, 'DD/MM') as name,
@@ -47,16 +47,19 @@ export async function GET() {
       income: Number(income),
       expense: Number(expense),
       profit: Number(balance),
-      currency: settings.currency,
+      currency: dbCurrency, // Bazadagi haqiqiy qiymat
       usdRate: usdRate,
       chartData: chartResult.rows.map(r => ({
         name: r.name,
         income: Number(r.income),
         expense: Number(r.expense)
       }))
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0' // Brauzerga keshlamaslikni aytamiz
+      }
     });
   } catch (error) {
-    console.error('Dashboard API Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Error' }, { status: 500 });
   }
 }
