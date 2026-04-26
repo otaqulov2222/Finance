@@ -88,11 +88,19 @@ export default function DashboardPage() {
           <h2 className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent uppercase">
             Boshqaruv Paneli
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-              Valyuta: <span className="text-primary">{isUSD ? `USD ($)` : 'UZS (So\'m)'}</span>
-            </p>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 border-r border-white/10 pr-4">
+                Valyuta: <span className="text-primary">{isUSD ? `USD ($)` : 'UZS (So\'m)'}</span>
+              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 flex items-center gap-2">
+                <span className="text-white/20 italic">Markaziy Bank kursi:</span>
+                <span className="bg-white/5 px-2 py-1 rounded-md border border-white/10 text-emerald-400">
+                  1 USD = {Number(data?.usdRate || 12650).toLocaleString()} UZS
+                </span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
