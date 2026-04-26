@@ -165,14 +165,14 @@ export async function POST(req: NextRequest) {
           
           // Bo'sh yoki juda qisqa xabarni o'tkazib yuborish
           if (!content || content.trim().length < 3) {
-            return await bot.telegram.sendMessage(chatId, "⚠️ Ovozli xabarda ma'lumot topilmadi yoki tushunarsiz.", mainKeyboard);
+            await bot.telegram.sendMessage(chatId, "⚠️ Ovozli xabarda ma'lumot topilmadi yoki tushunarsiz.", mainKeyboard);
+            return NextResponse.json({ ok: true });
           }
         }
         
         const p = await parseTransaction(content);
         if (p && p.amount && p.amount > 0) {
           await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, p.amount, p.type, p.category || 'Boshqa', p.note || content]);
-          // Foydalanuvchi xabarini (text yoki voice) O'CHIRMAYMIZ
           const emo = p.type === 'income' ? '🟢' : '🔴';
           await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${p.amount.toLocaleString()} UZS\n📊 <b>Kategoriya:</b> ${p.category}`, { parse_mode: 'HTML', ...mainKeyboard });
         } else {
