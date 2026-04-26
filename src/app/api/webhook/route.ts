@@ -13,7 +13,7 @@ const mainKeyboard = {
       [{ text: "📊 Statistika" }, { text: "🌐 Saytga o'tish" }]
     ],
     resize_keyboard: true,
-    persistent: true
+    one_time_keyboard: false
   }
 };
 
@@ -35,6 +35,8 @@ async function parseTransaction(text: string) {
 export async function POST(req: NextRequest) {
   try {
     const update = await req.json();
+    console.log("Incoming Update:", JSON.stringify(update));
+
     const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id;
     const userId = update.message?.from?.id || update.callback_query?.from?.id;
     
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
       profile = newProfileRows[0];
     }
 
+    // Handle Callback Queries (Inline Buttons)
     if (update.callback_query) {
       const data = update.callback_query.data;
       const messageId = update.callback_query.message.message_id;
@@ -94,10 +97,7 @@ export async function POST(req: NextRequest) {
           'INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)',
           [profile.id, amt, type, cat, `Tugma orqali: ${cat}`]
         );
-        
-        // 1. Tugmalar turgan xabarni o'chiradi
         try { await bot.telegram.deleteMessage(chatId, messageId); } catch (e) {}
-
         const typeEmoji = type === 'income' ? '🟢 <b>Kirim</b>' : '🔴 <b>Chiqim</b>';
         await bot.telegram.sendMessage(chatId, `<b>Muvaffaqiyatli saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${Number(amt).toLocaleString()} UZS\n📊 <b>Turi:</b> ${typeEmoji}\n🗂 <b>Kategoriya:</b> ${cat}\n\n<i>Dashboardda yangilandi.</i> 📈`, { parse_mode: 'HTML', ...mainKeyboard });
       }
@@ -110,14 +110,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Handle Messages (Text & Voice)
     if (update.message) {
       const text = update.message.text;
       const messageId = update.message.message_id;
 
-      if (text === '🔴 Chiqim' || text === '🟢 Kirim') {
-        // 2. Foydalanuvchi yuborgan buyruqni o'chiradi
+      if (text === '/start' || text === '🏘 Asosiy menyu') {
+        await bot.telegram.sendMessage(chatId, "<b>Assalomu alaykum!</b> Tanlang:", { parse_mode: 'HTML', ...mainKeyboard });
+      } else if (text === '🔴 Chiqim' || text === '🟢 Kirim') {
         try { await bot.telegram.deleteMessage(chatId, messageId); } catch (e) {}
-        
         const type = text === '🟢 Kirim' ? 'income' : 'expense';
         const categories = type === 'expense' 
           ? [['🍳 Nonushta', '🍱 Tushlik', '🌙 Kechki ovqat'], ['🚕 Taxi', '⛽️ Benzin', '🛒 Bozor'], ['💡 Kommunal', '➕ Boshqa']]
@@ -163,11 +164,8 @@ export async function POST(req: NextRequest) {
           }
 
           await query('INSERT INTO transactions (user_id, amount, type, category, note, voice_transcription) VALUES ($1, $2, $3, $4, $5, $6)', [profile.id, parsed.amount, parsed.type, parsed.category || 'Boshqa', parsed.note || transcription.text, transcription.text]);
-          
           await bot.telegram.deleteMessage(chatId, feedback.message_id);
-          // 3. Ovozli xabarni ham o'chiradi
           try { await bot.telegram.deleteMessage(chatId, messageId); } catch (e) {}
-
           const typeEmoji = parsed.type === 'income' ? '🟢 <b>Kirim</b>' : '🔴 <b>Chiqim</b>';
           await bot.telegram.sendMessage(chatId, `<b>Ovozli xabar saqlandi!</b> 🎤✅\n\n💰 <b>Summa:</b> ${parsed.amount.toLocaleString()} UZS\n📊 <b>Turi:</b> ${typeEmoji}\n🗂 <b>Kategoriya:</b> ${parsed.category}\n\n<i>Dashboardda yangilandi.</i> 📈`, { parse_mode: 'HTML', ...mainKeyboard });
         } catch (err: any) { await bot.telegram.sendMessage(chatId, `❌ Xatolik: ${err.message}`, mainKeyboard); }
