@@ -50,6 +50,24 @@ export default function TransactionsPage() {
       });
   };
 
+  const handleExport = async () => {
+    const { utils, writeFile } = await import('xlsx');
+    
+    const exportData = transactions.map(t => ({
+      'Sana': new Date(t.created_at).toLocaleDateString('uz-UZ'),
+      'Vaqt': new Date(t.created_at).toLocaleTimeString('uz-UZ'),
+      'Kategoriya': t.category || 'Boshqa',
+      'Izoh': t.note || '-',
+      'Tur': t.type === 'income' ? 'Kirim' : 'Chiqim',
+      'Miqdor (UZS)': Number(t.amount)
+    }));
+
+    const ws = utils.json_to_sheet(exportData);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Amallar");
+    writeFile(wb, `UzFinance_Amallar_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   useEffect(() => {
     fetchTransactions();
     // Ultra-tezkor yangilanish (2 soniya)
@@ -94,7 +112,10 @@ export default function TransactionsPage() {
             <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Live Update (2s)</p>
           </div>
         </div>
-        <Button className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold gap-2 rounded-xl">
+        <Button 
+          onClick={handleExport}
+          className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold gap-2 rounded-xl"
+        >
           <Download className="h-4 w-4" /> Excelga yuklash
         </Button>
       </div>

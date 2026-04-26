@@ -11,7 +11,8 @@ import {
   CreditCard,
   MessageSquare,
   ShieldCheck,
-  X
+  X,
+  Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Asosiy", href: "/dashboard" },
   { icon: History, label: "Amallar", href: "/dashboard/transactions" },
   { icon: CreditCard, label: "Nasiyalar", href: "/dashboard/debts" },
+  { icon: Target, label: "Maqsadlar", href: "/dashboard/goals" },
   { icon: Settings, label: "Sozlamalar", href: "/dashboard/settings" },
 ];
 
