@@ -5,6 +5,7 @@ import { query } from '@/lib/db';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
+// Version: 2.1.0 - Refined Confirmation Format
 
 const mainKeyboard = {
   reply_markup: {
