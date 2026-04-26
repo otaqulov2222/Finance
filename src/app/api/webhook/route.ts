@@ -23,7 +23,17 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz professional O'zbek moliya tahlilchisiz. Javob FAQAT JSON: {"amount": number|null, "type": "income"|"expense", "category": string, "note": string}`
+        content: `Siz professional O'zbek moliya tahlilchisiz. O'zbek tilidagi sonlarni va moliyaviy jargonlarni mukammal bilasiz.
+        
+        QAT'IY QOIDALAR:
+        1. "ming" yoki "k" (masalan: 12 ming, 12k) = * 1000.
+        2. "million" yoki "mln" = * 1,000,000.
+        3. "yuz" (masalan: 2 yuz ming) = 200,000.
+        4. Agar summa juda kichik bo'lsa (masalan: 12 UZS), bu xato. Kamida 500 UZS bo'lishi kerak. 12 deganda odatda 12,000 tushuniladi.
+        5. "Oldim", "berdim", "ketdi", "ishlatdim" — bular Chiqim (expense).
+        6. "Keldi", "oylik", "tushum", "foyda" — bular Kirim (income).
+        
+        Javob FAQAT JSON: {"amount": number|null, "type": "income"|"expense", "category": string, "note": string}`
       },
       { role: "user", content: text }
     ],
