@@ -5,7 +5,7 @@ import { query } from '@/lib/db';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
-// Version: 2.1.0 - Refined Confirmation Format
+// Version: 2.2.0 - Final Unified Confirmation Format
 
 const mainKeyboard = {
   reply_markup: {
@@ -30,7 +30,7 @@ async function parseTransaction(text: string) {
         1. "ming" yoki "k" (masalan: 12 ming, 12k) = * 1000.
         2. "million" yoki "mln" = * 1,000,000.
         3. "yuz" (masalan: 2 yuz ming) = 200,000.
-        4. Agar summa juda kichik bo'lsa (masalan: 12 UZS), bu xato. Kamida 500 UZS bo'lishi kerak. 12 deganda odatda 12,000 tushuniladi.
+        4. Agar summa juda kichik bo'lsa (masalan: 12 UZS), bu xato. Kamida 500 UZS bo'lishi kerak.
         5. "Oldim", "berdim", "ketdi", "ishlatdim" — bular Chiqim (expense).
         6. "Keldi", "oylik", "tushum", "foyda" — bular Kirim (income).
         
@@ -53,39 +53,14 @@ async function getDailySummary(userId: string) {
     WHERE user_id = $1 AND created_at >= CURRENT_DATE
   `, [userId]);
 
-  const details = await query(`
-    SELECT category, amount, type, note 
-    FROM transactions 
-    WHERE user_id = $1 AND created_at >= CURRENT_DATE
-    ORDER BY created_at DESC
-  `, [userId]);
-
   const { income, expense, count } = stats.rows[0];
+  let msg = `📅 <b>Bugungi hisobot:</b>\n\n🟢 <b>Kirim:</b> ${Number(income).toLocaleString()} UZS\n🔴 <b>Chiqim:</b> ${Number(expense).toLocaleString()} UZS\n⚖️ <b>Balans:</b> ${(Number(income) - Number(expense)).toLocaleString()} UZS\n📝 <b>Amallar soni:</b> ${count} ta\n`;
   
-  let msg = `📅 <b>Bugungi hisobot:</b>\n\n`;
-  msg += `🟢 <b>Kirim:</b> ${Number(income).toLocaleString()} UZS\n`;
-  msg += `🔴 <b>Chiqim:</b> ${Number(expense).toLocaleString()} UZS\n`;
-  msg += `⚖️ <b>Balans:</b> ${(Number(income) - Number(expense)).toLocaleString()} UZS\n`;
-  msg += `📝 <b>Amallar soni:</b> ${count} ta\n\n`;
-  
-  if (details.rows.length > 0) {
-    msg += `<b>Oxirgi amallar:</b>\n`;
-    details.rows.slice(0, 5).forEach((t: any) => {
-      const emo = t.type === 'income' ? '➕' : '➖';
-      msg += `${emo} ${Number(t.amount).toLocaleString()} - ${t.category}\n`;
-    });
-  }
-
-  // AI Insight
   const aiRes = await groq.chat.completions.create({
     model: "llama-3.1-8b-instant",
-    messages: [
-      { role: "system", content: "Siz moliyaviy maslahatchisiz. Kunlik sarf-xarajatga qisqa (1 ta gap) o'zbekcha maslahat bering." },
-      { role: "user", content: `Kirim: ${income}, Chiqim: ${expense}.` }
-    ]
+    messages: [{ role: "system", content: "Siz moliyaviy maslahatchisiz. Kunlik sarf-xarajatga qisqa o'zbekcha maslahat bering." }, { role: "user", content: `Kirim: ${income}, Chiqim: ${expense}.` }]
   });
   msg += `\n💡 <b>AI Maslahat:</b> <i>${aiRes.choices[0].message.content}</i>`;
-
   return msg;
 }
 
@@ -128,7 +103,9 @@ export async function POST(req: NextRequest) {
         const [type, cat, amt] = p;
         await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, amt, type, cat, `Bot orqali: ${cat}`]);
         try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
-        await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${Number(amt).toLocaleString()} UZS\n📊 <b>Kategoriya:</b> ${cat}`, { parse_mode: 'HTML', ...mainKeyboard });
+        const emo = type === 'income' ? '🟢' : '🔴';
+        const typeName = type === 'income' ? 'Kirim' : 'Chiqim';
+        await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${Number(amt).toLocaleString()} UZS\n📊 <b>Turi:</b> ${emo} <b>${typeName}</b>\n🗂 <b>Kategoriya:</b> ${cat}`, { parse_mode: 'HTML', ...mainKeyboard });
       } else if (action === 'menu') {
         try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         await bot.telegram.sendMessage(chatId, "Asosiy menyu:", mainKeyboard);
@@ -143,7 +120,6 @@ export async function POST(req: NextRequest) {
       if (text === '/start' || text === '🏘 Asosiy menyu') {
         await bot.telegram.sendMessage(chatId, "<b>Assalomu alaykum!</b> Tanlang:", { parse_mode: 'HTML', ...mainKeyboard });
       } else if (text === '🔴 Chiqim' || text === '🟢 Kirim') {
-        try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         const type = text === '🟢 Kirim' ? 'income' : 'expense';
         const { rows: cats } = await query('SELECT name FROM categories WHERE user_id = $1 AND type = $2', [profile.id, type]);
         const inline_keyboard = [];
@@ -154,15 +130,12 @@ export async function POST(req: NextRequest) {
         inline_keyboard.push([{ text: "🏘 Menyu", callback_data: "menu" }]);
         await bot.telegram.sendMessage(chatId, "📂 Kategoriyani tanlang:", { reply_markup: { inline_keyboard } });
       } else if (text === '📋 Kunlik xulosa') {
-        try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         const summary = await getDailySummary(profile.id);
         await bot.telegram.sendMessage(chatId, summary, { parse_mode: 'HTML', ...mainKeyboard });
       } else if (text === '📊 Statistika') {
-        try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         const s = await query(`SELECT COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END),0) as inc, COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),0) as exp FROM transactions WHERE user_id=$1`, [profile.id]);
         await bot.telegram.sendMessage(chatId, `📊 <b>Jami Statistika:</b>\n\n🟢 Kirim: ${Number(s.rows[0].inc).toLocaleString()} UZS\n🔴 Chiqim: ${Number(s.rows[0].exp).toLocaleString()} UZS`, { parse_mode: 'HTML', ...mainKeyboard });
       } else if (text === "🌐 Saytga o'tish") {
-        try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         await bot.telegram.sendMessage(chatId, "Dashboard:", { reply_markup: { inline_keyboard: [[{ text: "🖥 Ochish", url: "https://finance-15gk.onrender.com/dashboard" }]] } });
       } else if (update.message.voice || (text && !['📊 Statistika', '📋 Kunlik xulosa', "🌐 Saytga o'tish"].includes(text))) {
         let content = text;
@@ -173,14 +146,11 @@ export async function POST(req: NextRequest) {
           const trans = await groq.audio.transcriptions.create({ file: await Groq.toFile(Buffer.from(await r.arrayBuffer()), "voice.ogg"), model: "whisper-large-v3", language: "uz" });
           content = trans.text;
           try { await bot.telegram.deleteMessage(chatId, fb.message_id); } catch (e) {}
-          
-          // Bo'sh yoki juda qisqa xabarni o'tkazib yuborish
           if (!content || content.trim().length < 3) {
-            await bot.telegram.sendMessage(chatId, "⚠️ Ovozli xabarda ma'lumot topilmadi yoki tushunarsiz.", mainKeyboard);
+            await bot.telegram.sendMessage(chatId, "⚠️ Ovozda ma'lumot topilmadi.", mainKeyboard);
             return NextResponse.json({ ok: true });
           }
         }
-        
         const p = await parseTransaction(content);
         if (p && p.amount && p.amount > 0) {
           await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, p.amount, p.type, p.category || 'Boshqa', p.note || content]);
@@ -188,7 +158,7 @@ export async function POST(req: NextRequest) {
           const typeName = p.type === 'income' ? 'Kirim' : 'Chiqim';
           await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${p.amount.toLocaleString()} UZS\n📊 <b>Turi:</b> ${emo} <b>${typeName}</b>\n🗂 <b>Kategoriya:</b> ${p.category}`, { parse_mode: 'HTML', ...mainKeyboard });
         } else {
-          await bot.telegram.sendMessage(chatId, "⚠️ Gapda summa yoki mantiqiy amal aniqlanmadi.", mainKeyboard);
+          await bot.telegram.sendMessage(chatId, "⚠️ Summa aniqlanmadi.", mainKeyboard);
         }
       }
     }
