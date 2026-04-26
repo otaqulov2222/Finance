@@ -7,7 +7,8 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   Wallet,
-  Zap
+  Zap,
+  Activity
 } from "lucide-react";
 import { 
   XAxis, 
@@ -15,8 +16,9 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  AreaChart,
-  Area
+  BarChart,
+  Bar,
+  Legend
 } from "recharts";
 
 export default function DashboardPage() {
@@ -35,7 +37,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 15000);
+    // 5 soniyada yangilanish - valyuta almashinuvi tez sezilishi uchun
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -55,18 +58,18 @@ export default function DashboardPage() {
     return `${value.toLocaleString()} UZS`;
   };
 
-  // Chart ma'lumotlarini ham valyutaga qarab o'zgartiramiz
+  // Grafik ma'lumotlarini valyutaga qarab hisoblash
   const chartData = (data?.chartData || []).map((item: any) => ({
     ...item,
-    income: isUSD ? (item.income / rate) : item.income,
-    expense: isUSD ? (item.expense / rate) : item.expense
+    kirim: isUSD ? Number((item.income / rate).toFixed(2)) : item.income,
+    chiqim: isUSD ? Number((item.expense / rate).toFixed(2)) : item.expense
   }));
 
   const stats = [
     {
       title: "Umumiy Balans",
       value: formatValue(data?.balance || 0),
-      description: "+2.1% o'sish",
+      description: "Joriy holat",
       icon: Wallet,
       color: "text-blue-500",
       bg: "bg-blue-500/10"
@@ -74,7 +77,7 @@ export default function DashboardPage() {
     {
       title: "Oylik Kirim",
       value: formatValue(data?.income || 0),
-      description: "+12% oylik",
+      description: "Jami tushumlar",
       icon: ArrowUpRight,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10"
@@ -82,7 +85,7 @@ export default function DashboardPage() {
     {
       title: "Oylik Chiqim",
       value: formatValue(data?.expense || 0),
-      description: "-4% kamayish",
+      description: "Jami xarajatlar",
       icon: ArrowDownRight,
       color: "text-rose-500",
       bg: "bg-rose-500/10"
@@ -90,7 +93,7 @@ export default function DashboardPage() {
     {
       title: "Sof Foyda",
       value: formatValue(data?.profit || 0),
-      description: "+8% foyda",
+      description: "Kirim - Chiqim",
       icon: TrendingUp,
       color: "text-amber-500",
       bg: "bg-amber-500/10"
@@ -101,100 +104,97 @@ export default function DashboardPage() {
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
+          <h2 className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent uppercase">
             Boshqaruv Paneli
           </h2>
-          <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
-            Valyuta: <span className="text-primary">{isUSD ? `USD (1$ = ${rate.toLocaleString()} UZS)` : 'UZS (So\'m)'}</span>
-          </p>
-        </div>
-        <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl hidden md:flex items-center gap-3">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Markaziy Bank kursi bilan sinxronlangan</span>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+              Valyuta: <span className="text-primary">{isUSD ? `USD ($)` : 'UZS (So\'m)'}</span>
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title} className="border-none bg-card/40 backdrop-blur-xl transition-all hover:translate-y-[-4px] hover:shadow-2xl ring-1 ring-white/10 group">
+          <Card key={stat.title} className="border-none bg-card/40 backdrop-blur-xl transition-all hover:scale-[1.02] ring-1 ring-white/10 overflow-hidden relative group">
+            <div className={`absolute top-0 left-0 w-1 h-full ${stat.color.replace('text', 'bg')}`} />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{stat.title}</CardTitle>
-              <div className={`rounded-xl ${stat.bg} p-2 transition-transform group-hover:scale-110`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
+              <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">{stat.title}</CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.color} opacity-40 group-hover:opacity-100 transition-opacity`} />
             </CardHeader>
             <CardContent>
               <div className="text-xl md:text-2xl font-black text-white tabular-nums truncate">{stat.value}</div>
-              <p className={`text-[10px] font-bold mt-1 uppercase tracking-tighter ${stat.color}`}>
-                {stat.description}
-              </p>
+              <p className="text-[9px] font-bold mt-1 text-muted-foreground uppercase tracking-widest">{stat.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
-          <CardHeader>
+        <Card className="lg:col-span-5 border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
+          <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <CardTitle className="text-sm font-bold uppercase tracking-widest">O'sish Analitikasi ({isUSD ? '$' : 'UZS'})</CardTitle>
+              <Activity className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-black uppercase tracking-widest">Haftalik Dinamika ({isUSD ? '$' : 'UZS'})</CardTitle>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-bold text-white/40 uppercase">Kirim</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-rose-500" />
+                <span className="text-[10px] font-bold text-white/40 uppercase">Chiqim</span>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="pl-0 md:pl-2">
-            <div className="h-[250px] md:h-[300px] w-full">
+          <CardContent className="px-2">
+            <div className="h-[300px] md:h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <BarChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                   <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} hide={window?.innerWidth < 768} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: '12px' }}
-                    formatter={(value: any) => [isUSD ? `$${Number(value).toFixed(2)}` : `${Number(value).toLocaleString()} UZS`, 'Kirim']}
+                    cursor={{ fill: '#ffffff05' }}
+                    contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '16px', padding: '12px' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                    labelStyle={{ marginBottom: '8px', color: '#888', fontWeight: 'bold' }}
                   />
-                  <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                </AreaChart>
+                  <Bar dataKey="kirim" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} />
+                  <Bar dataKey="chiqim" fill="#f43f5e" radius={[6, 6, 0, 0]} barSize={20} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 flex flex-col justify-between">
+        <Card className="lg:col-span-2 border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 flex flex-col">
           <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-widest">Moliyaviy Holat</CardTitle>
+            <CardTitle className="text-sm font-black uppercase tracking-widest">Xulosa</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                <span className="text-muted-foreground">Jamg'arma Maqsadi</span>
-                <span className="text-white">85%</span>
+          <CardContent className="space-y-6 flex-1 flex flex-col justify-center">
+            <div className="p-5 rounded-3xl bg-white/5 border border-white/10 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-primary/20 flex items-center justify-center">
+                  <Zap className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Samaradorlik</p>
+                  <p className="text-xl font-black text-white">94.2%</p>
+                </div>
               </div>
-              <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden p-[1px]">
-                <div className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400" style={{ width: '85%' }} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Samaradorlik</p>
-                <p className="text-lg font-black text-white">94.2%</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Valyuta</p>
-                <p className="text-lg font-black text-primary uppercase">{isUSD ? 'USD' : 'UZS'}</p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-primary/10 p-4 border border-primary/20 flex gap-3">
-              <Zap className="h-4 w-4 text-primary shrink-0 mt-1" />
               <p className="text-[11px] leading-relaxed text-white/60">
-                <span className="text-white font-black uppercase tracking-tighter">AI Tahlili:</span> 1 USD = {rate.toLocaleString()} UZS. Barcha ma'lumotlar avtomatik ravishda konvertatsiya qilindi.
+                Sizning moliyaviy o'sish ko'rsatkichingiz juda yaxshi. Oylik balans ijobiy dinamikada.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-primary/10 border border-primary/20">
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Maslahat</p>
+              <p className="text-[11px] font-medium text-white/80 leading-relaxed italic">
+                "Kichik xarajatlarni nazorat qilish — katta boylikka yo'l."
               </p>
             </div>
           </CardContent>
