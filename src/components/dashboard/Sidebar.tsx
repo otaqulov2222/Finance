@@ -2,105 +2,116 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
   History, 
-  Settings,
+  Settings, 
+  LogOut, 
   TrendingUp,
-  Zap,
-  Target,
-  ChevronRight,
-  Users,
-  UserCircle
+  CreditCard,
+  MessageSquare,
+  ShieldCheck,
+  X
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { name: "Asosiy", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Amallar", href: "/dashboard/transactions", icon: History },
-  { name: "Nasiyalar", href: "/dashboard/debts", icon: Users },
-  { name: "Sozlamalar", href: "/dashboard/settings", icon: Settings },
+  { icon: LayoutDashboard, label: "Asosiy", href: "/dashboard" },
+  { icon: History, label: "Amallar", href: "/dashboard/transactions" },
+  { icon: CreditCard, label: "Nasiyalar", href: "/dashboard/debts" },
+  { icon: Settings, label: "Sozlamalar", href: "/dashboard/settings" },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-white/5 bg-black/40 backdrop-blur-2xl">
-      <div className="flex h-24 items-center px-6">
-        <div className="flex items-center gap-3 group cursor-pointer">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-emerald-400 p-2.5 shadow-[0_0_20px_rgba(var(--primary),0.5)] group-hover:scale-110 transition-transform duration-300">
-            <TrendingUp className="h-5 w-5 text-black" />
+    <div className="flex h-full w-full flex-col bg-[#050505] border-r border-white/5 p-6 animate-in slide-in-from-left duration-500">
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute -inset-1 bg-primary blur opacity-20 animate-pulse"></div>
+            <div className="relative bg-primary p-2 rounded-xl">
+              <TrendingUp className="h-6 w-6 text-black" />
+            </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tighter text-white">
-              UzFinance
-            </span>
-            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Business Pro</span>
+            <span className="font-black text-xl tracking-tighter text-white leading-none">UzFinance</span>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Business Pro</span>
           </div>
         </div>
+        {onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden text-white/40 hover:text-white">
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
-      <div className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-        <p className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mb-4">
-          Boshqaruv Paneli
-        </p>
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "group flex items-center justify-between rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-300",
-                isActive 
-                  ? "bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(var(--primary),0.05)] ring-1 ring-primary/20" 
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className={cn("h-5 w-5 transition-transform duration-300 group-hover:scale-110", isActive ? "text-primary" : "opacity-70")} />
-                {item.name}
+      <div className="space-y-1 flex-1">
+        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 px-3">Boshqaruv Paneli</p>
+        {menuItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onClose}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
+              pathname === item.href 
+                ? "bg-primary/10 text-primary shadow-[0_0_20px_rgba(var(--primary),0.1)] border border-primary/20" 
+                : "text-white/40 hover:text-white hover:bg-white/5"
+            )}
+          >
+            {pathname === item.href && (
+              <div className="absolute left-0 w-1 h-6 bg-primary rounded-r-full" />
+            )}
+            <item.icon className={cn(
+              "h-5 w-5 transition-transform duration-300 group-hover:scale-110",
+              pathname === item.href ? "text-primary" : "text-inherit"
+            )} />
+            <span className="font-bold text-sm">{item.label}</span>
+            {pathname === item.href && (
+              <div className="ml-auto">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_#10b981]" />
               </div>
-              {isActive && <ChevronRight className="h-4 w-4 animate-in slide-in-from-left-2 duration-300" />}
-            </Link>
-          );
-        })}
+            )}
+          </Link>
+        ))}
       </div>
 
-      <div className="p-4 space-y-4">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-500/5 p-5 border border-primary/20 group">
-          <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-            <Target className="h-24 w-24" />
+      <div className="mt-auto space-y-4">
+        <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-primary/5 p-5 border border-primary/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform duration-700">
+            <MessageSquare className="h-12 w-12" />
           </div>
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-4 w-4 text-primary fill-primary animate-pulse" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary">Status: Aktiv</p>
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary">Status: Aktiv</span>
             </div>
-            <p className="text-xs font-bold text-white mb-3 leading-relaxed">
-              Bot orqali tahlillarni boshlang.
-            </p>
-            <a 
+            <p className="text-[11px] text-white/60 font-medium mb-4 leading-relaxed">Bot orqali tahlillarni boshlang.</p>
+            <Link 
               href="https://t.me/uz_finance_manager_bot" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block w-full py-2.5 rounded-lg bg-primary text-black text-center text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-lg shadow-primary/20"
+              target="_blank"
+              className="block w-full"
             >
-              Botga o'tish
-            </a>
+              <Button className="w-full bg-primary text-black font-black text-[11px] uppercase tracking-widest h-10 hover:bg-emerald-400 transition-all shadow-[0_10px_20px_rgba(16,185,129,0.2)]">
+                Botga o'tish
+              </Button>
+            </Link>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-4 py-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
+        <div className="flex items-center gap-3 px-4 py-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all cursor-pointer">
           <div className="relative">
-            <UserCircle className="h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors" />
-            <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-black" />
+            <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden">
+              <ShieldCheck className="h-6 w-6 text-white/60 group-hover:text-primary transition-colors" />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#050505]" />
           </div>
-          <div className="flex flex-col">
-            <p className="text-sm font-bold text-white tracking-tight">Admin</p>
-            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Boshqaruvchi</p>
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold text-white truncate">Admin</span>
+            <span className="text-[10px] font-medium text-white/40 uppercase tracking-tighter truncate">Boshqaruvchi</span>
           </div>
         </div>
       </div>
