@@ -168,9 +168,11 @@ export default function TransactionsPage() {
                 <TableRow key={item.id} className="border-white/5 group transition-all duration-300 hover:bg-white/5">
                   <TableCell className="font-medium text-white/80 py-4">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold">{new Date(item.created_at).toLocaleDateString('uz-UZ')}</span>
-                      <span className="text-[10px] text-primary font-black opacity-60">
-                        {new Date(item.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      <span className="text-[11px] font-bold text-white/90">
+                        {new Date(item.created_at).toLocaleDateString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tashkent' })}
+                      </span>
+                      <span className="text-[10px] font-black text-primary uppercase tracking-tighter">
+                        {new Date(item.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Tashkent' })}
                       </span>
                     </div>
                   </TableCell>
