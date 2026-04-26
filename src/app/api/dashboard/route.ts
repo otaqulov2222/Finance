@@ -1,60 +1,62 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-async function getUsdRate() {
-  try {
-    const res = await fetch('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/', { next: { revalidate: 3600 } });
-    const data = await res.json();
-    return Number(data[0].Rate);
-  } catch (err) {
-    console.error("CBU API error:", err);
-    return 12650; // Xatolik bo'lsa default kurs
-  }
-}
-
 export async function GET() {
   try {
-    const usdRate = await getUsdRate();
+    // 1. Markaziy Bankdan real vaqtda USD kursini olish
+    let usdRate = 12500; // Default
+    try {
+      const cbuRes = await fetch('https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/');
+      const cbuData = await cbuRes.json();
+      if (cbuData && cbuData[0]) {
+        usdRate = parseFloat(cbuData[0].Rate);
+      }
+    } catch (e) {
+      console.error("CBU Fetch error:", e);
+    }
 
-    // 1. Umumiy balans, kirim va chiqimlarni hisoblash
+    // 2. Sozlamalarni olish
+    const settingsResult = await query('SELECT * FROM settings LIMIT 1');
+    const settings = settingsResult.rows[0] || { currency: 'UZS', business_name: 'Mening Biznesim' };
+
+    // 3. Moliyaviy ma'lumotlarni hisoblash
     const statsResult = await query(`
       SELECT 
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expense
-      FROM transactions
-    `);
-
-    const { total_income, total_expense } = statsResult.rows[0];
-    const balance = Number(total_income) - Number(total_expense);
-    const profit = balance > 0 ? balance : 0;
-
-    // 2. So'nggi 7 kunlik grafik ma'lumotlari
-    const chartResult = await query(`
-      SELECT 
-        TO_CHAR(created_at, 'DD/MM') as name,
         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as income,
         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expense
       FROM transactions
-      WHERE created_at > NOW() - INTERVAL '7 days'
-      GROUP BY TO_CHAR(created_at, 'DD/MM'), created_at
-      ORDER BY created_at ASC
+    `);
+    
+    const { income, expense } = statsResult.rows[0];
+    const balance = Number(income) - Number(expense);
+
+    // 4. Grafik uchun oxirgi 7 kunlik ma'lumotlar
+    const chartResult = await query(`
+      SELECT 
+        TO_CHAR(created_at, 'DD/MM') as name,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense
+      FROM transactions
+      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY TO_CHAR(created_at, 'DD/MM'), DATE(created_at)
+      ORDER BY DATE(created_at) ASC
     `);
 
-    // 3. Sozlamalardan valyutani olish
-    const settingsRes = await query('SELECT currency FROM settings WHERE id = 1');
-    const currency = settingsRes.rows[0]?.currency || 'UZS';
-
     return NextResponse.json({
-      balance,
-      income: Number(total_income),
-      expense: Number(total_expense),
-      profit,
-      chartData: chartResult.rows,
-      usdRate,
-      currency
+      balance: Number(balance),
+      income: Number(income),
+      expense: Number(expense),
+      profit: Number(balance),
+      currency: settings.currency,
+      usdRate: usdRate,
+      chartData: chartResult.rows.map(r => ({
+        name: r.name,
+        income: Number(r.income),
+        expense: Number(r.expense)
+      }))
     });
   } catch (error) {
-    console.error("Dashboard API Error:", error);
-    return NextResponse.json({ error: 'Failed to fetch dashboard data' }, { status: 500 });
+    console.error('Dashboard API Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

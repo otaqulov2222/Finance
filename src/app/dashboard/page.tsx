@@ -45,12 +45,22 @@ export default function DashboardPage() {
     </div>
   );
 
+  const isUSD = data?.currency === 'USD';
+  const rate = data?.usdRate || 12600;
+
   const formatValue = (value: number) => {
-    if (data?.currency === 'USD') {
-      return `$${(value / data.usdRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (isUSD) {
+      return `$${(value / rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
     return `${value.toLocaleString()} UZS`;
   };
+
+  // Chart ma'lumotlarini ham valyutaga qarab o'zgartiramiz
+  const chartData = (data?.chartData || []).map((item: any) => ({
+    ...item,
+    income: isUSD ? (item.income / rate) : item.income,
+    expense: isUSD ? (item.expense / rate) : item.expense
+  }));
 
   const stats = [
     {
@@ -89,14 +99,21 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-          Boshqaruv Paneli
-        </h2>
-        <p className="text-xs md:text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Real vaqt tahlili</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
+            Boshqaruv Paneli
+          </h2>
+          <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
+            Valyuta: <span className="text-primary">{isUSD ? `USD (1$ = ${rate.toLocaleString()} UZS)` : 'UZS (So\'m)'}</span>
+          </p>
+        </div>
+        <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl hidden md:flex items-center gap-3">
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Markaziy Bank kursi bilan sinxronlangan</span>
+        </div>
       </div>
 
-      {/* Stats Grid - Responsive */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="border-none bg-card/40 backdrop-blur-xl transition-all hover:translate-y-[-4px] hover:shadow-2xl ring-1 ring-white/10 group">
@@ -117,18 +134,17 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-7">
-        {/* Chart Section */}
         <Card className="lg:col-span-4 border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
           <CardHeader>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              <CardTitle className="text-sm font-bold uppercase tracking-widest">O'sish Analitikasi</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-widest">O'sish Analitikasi ({isUSD ? '$' : 'UZS'})</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pl-0 md:pl-2">
             <div className="h-[250px] md:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data?.chartData || []}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -138,7 +154,10 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                   <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} hide={window?.innerWidth < 768} />
-                  <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: '12px' }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: '12px' }}
+                    formatter={(value: any) => [isUSD ? `$${Number(value).toFixed(2)}` : `${Number(value).toLocaleString()} UZS`, 'Kirim']}
+                  />
                   <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -146,7 +165,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* AI Insight Section */}
         <Card className="lg:col-span-3 border-none bg-card/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 flex flex-col justify-between">
           <CardHeader>
             <CardTitle className="text-sm font-bold uppercase tracking-widest">Moliyaviy Holat</CardTitle>
@@ -168,15 +186,15 @@ export default function DashboardPage() {
                 <p className="text-lg font-black text-white">94.2%</p>
               </div>
               <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Xavf</p>
-                <p className="text-lg font-black text-primary uppercase">Past</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Valyuta</p>
+                <p className="text-lg font-black text-primary uppercase">{isUSD ? 'USD' : 'UZS'}</p>
               </div>
             </div>
 
             <div className="rounded-2xl bg-primary/10 p-4 border border-primary/20 flex gap-3">
               <Zap className="h-4 w-4 text-primary shrink-0 mt-1" />
               <p className="text-[11px] leading-relaxed text-white/60">
-                <span className="text-white font-black uppercase tracking-tighter">AI Tahlili:</span> Daromadingiz barqaror o'smoqda. Bozor xarajatlarini 5% kamaytirish tavsiya etiladi.
+                <span className="text-white font-black uppercase tracking-tighter">AI Tahlili:</span> 1 USD = {rate.toLocaleString()} UZS. Barcha ma'lumotlar avtomatik ravishda konvertatsiya qilindi.
               </p>
             </div>
           </CardContent>
