@@ -184,7 +184,8 @@ export async function POST(req: NextRequest) {
         if (p && p.amount && p.amount > 0) {
           await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, p.amount, p.type, p.category || 'Boshqa', p.note || content]);
           const emo = p.type === 'income' ? '🟢' : '🔴';
-          await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${p.amount.toLocaleString()} UZS\n📊 <b>Kategoriya:</b> ${p.category}`, { parse_mode: 'HTML', ...mainKeyboard });
+          const typeName = p.type === 'income' ? 'Kirim' : 'Chiqim';
+          await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${p.amount.toLocaleString()} UZS\n📊 <b>Turi:</b> ${emo} <b>${typeName}</b>\n🗂 <b>Kategoriya:</b> ${p.category}`, { parse_mode: 'HTML', ...mainKeyboard });
         } else {
           await bot.telegram.sendMessage(chatId, "⚠️ Gapda summa yoki mantiqiy amal aniqlanmadi.", mainKeyboard);
         }
