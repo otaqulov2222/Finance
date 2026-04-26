@@ -162,12 +162,21 @@ export async function POST(req: NextRequest) {
           const trans = await groq.audio.transcriptions.create({ file: await Groq.toFile(Buffer.from(await r.arrayBuffer()), "voice.ogg"), model: "whisper-large-v3", language: "uz" });
           content = trans.text;
           try { await bot.telegram.deleteMessage(chatId, fb.message_id); } catch (e) {}
+          
+          // Bo'sh yoki juda qisqa xabarni o'tkazib yuborish
+          if (!content || content.trim().length < 3) {
+            return await bot.telegram.sendMessage(chatId, "⚠️ Ovozli xabarda ma'lumot topilmadi yoki tushunarsiz.", mainKeyboard);
+          }
         }
+        
         const p = await parseTransaction(content);
-        if (p.amount) {
+        if (p && p.amount && p.amount > 0) {
           await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, p.amount, p.type, p.category || 'Boshqa', p.note || content]);
-          try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
+          // Foydalanuvchi xabarini (text yoki voice) O'CHIRMAYMIZ
+          const emo = p.type === 'income' ? '🟢' : '🔴';
           await bot.telegram.sendMessage(chatId, `<b>Saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${p.amount.toLocaleString()} UZS\n📊 <b>Kategoriya:</b> ${p.category}`, { parse_mode: 'HTML', ...mainKeyboard });
+        } else {
+          await bot.telegram.sendMessage(chatId, "⚠️ Gapda summa yoki mantiqiy amal aniqlanmadi.", mainKeyboard);
         }
       }
     }
