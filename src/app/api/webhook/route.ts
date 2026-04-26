@@ -19,21 +19,7 @@ async function parseTransaction(text: string) {
     messages: [
       {
         role: "system",
-        content: `Siz professional O'zbek moliya tahlilchisiz. O'zbek shevalari, jargonlari va qisqartmalarini mukammal bilasiz.
-        
-        QAT'IY QOIDALAR:
-        1. "X ga Y oldim" shaklida kelsa, X — har doim SUMMA (amount).
-        2. "X so'mdan Y ta Z oldim" shaklida kelsa, jami summa = X * Y.
-        3. Kategoriyalash:
-           - Non, go'sht, kartoshka, yog', bozor => "Bozor" yoki "Ovqat".
-           - Taxi, benzin, zapravka, metan, yo'l kira => "Transport".
-           - Oylik, foyda, tushum, pul keldi, qarz qaytdi => "Kirim".
-           - Osh, tushlik, ovqat, restoran => "Ovqat".
-           - Paynet, tel, svet, gaz => "Kommunal".
-        4. "Oldim" so'zi 90% holatda xarajat (expense) hisoblanadi (bozor bo'lsa).
-        5. "Oldim" faqat "Oylik" yoki "Pul" so'zlari bilan kelsagina Kirim (income).
-        
-        Javob FAQAT JSON: {"amount": number|null, "type": "income"|"expense", "category": string, "note": string}`
+        content: `Siz professional O'zbek moliya tahlilchisiz. O'zbek shevalari, jargonlari va qisqartmalarini mukammal bilasiz. Javob FAQAT JSON: {"amount": number|null, "type": "income"|"expense", "category": string, "note": string}`
       },
       { role: "user", content: text }
     ],
@@ -63,11 +49,17 @@ export async function POST(req: NextRequest) {
 
       if (action === 'type') {
         const type = p[0];
-        const cats = type === 'expense' 
-          ? [['🍳 Ovqat', '🛒 Bozor', '🚕 Transport'], ['💡 Kommunal', '➕ Boshqa']]
-          : [['💰 Savdo', '💵 Ish haqi', '📈 Foyda'], ['🔄 Qarz qaytdi', '➕ Boshqa']];
+        const { rows: cats } = await query('SELECT name FROM categories WHERE user_id = $1 AND type = $2', [profile.id, type]);
+        
+        const inline_keyboard = [];
+        for (let i = 0; i < cats.length; i += 2) {
+          const row = cats.slice(i, i + 2).map(c => ({ text: c.name, callback_data: `cat:${type}:${c.name}` }));
+          inline_keyboard.push(row);
+        }
+        inline_keyboard.push([{ text: "🏘 Menyu", callback_data: "menu" }]);
+
         await bot.telegram.editMessageText(chatId, mid, undefined, "📂 Kategoriyani tanlang:", {
-          reply_markup: { inline_keyboard: [...cats.map(r => r.map(c => ({ text: c, callback_data: `cat:${type}:${c}` }))), [{ text: "🏘 Menyu", callback_data: "menu" }]] }
+          reply_markup: { inline_keyboard }
         });
       } else if (action === 'cat') {
         const [type, cat] = p;
@@ -77,7 +69,7 @@ export async function POST(req: NextRequest) {
         });
       } else if (action === 'save') {
         const [type, cat, amt] = p;
-        await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, amt, type, cat, `Tugma orqali: ${cat}`]);
+        await query('INSERT INTO transactions (user_id, amount, type, category, note) VALUES ($1, $2, $3, $4, $5)', [profile.id, amt, type, cat, `Bot orqali: ${cat}`]);
         try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         const emo = type === 'income' ? '🟢' : '🔴';
         await bot.telegram.sendMessage(chatId, `<b>Muvaffaqiyatli saqlandi!</b> ✅\n\n💰 <b>Summa:</b> ${Number(amt).toLocaleString()} UZS\n📊 <b>Turi:</b> ${emo} <b>${type === 'income' ? 'Kirim' : 'Chiqim'}</b>\n🗂 <b>Kategoriya:</b> ${cat}`, { parse_mode: 'HTML', ...mainKeyboard });
@@ -96,8 +88,17 @@ export async function POST(req: NextRequest) {
       } else if (text === '🔴 Chiqim' || text === '🟢 Kirim') {
         try { await bot.telegram.deleteMessage(chatId, mid); } catch (e) {}
         const type = text === '🟢 Kirim' ? 'income' : 'expense';
+        const { rows: cats } = await query('SELECT name FROM categories WHERE user_id = $1 AND type = $2', [profile.id, type]);
+        
+        const inline_keyboard = [];
+        for (let i = 0; i < cats.length; i += 2) {
+          const row = cats.slice(i, i + 2).map(c => ({ text: c.name, callback_data: `cat:${type}:${c.name}` }));
+          inline_keyboard.push(row);
+        }
+        inline_keyboard.push([{ text: "🏘 Menyu", callback_data: "menu" }]);
+
         await bot.telegram.sendMessage(chatId, "📂 Kategoriyani tanlang:", {
-          reply_markup: { inline_keyboard: [[{ text: '🍳 Ovqat', callback_data: `cat:${type}:Ovqat` }, { text: '🛒 Bozor', callback_data: `cat:${type}:Bozor` }], [{ text: '🚕 Transport', callback_data: `cat:${type}:Transport` }, { text: '➕ Boshqa', callback_data: `cat:${type}:Boshqa` }]] }
+          reply_markup: { inline_keyboard }
         });
       } else if (update.message.voice || (text && !['📊 Statistika', "🌐 Saytga o'tish"].includes(text))) {
         let content = text;

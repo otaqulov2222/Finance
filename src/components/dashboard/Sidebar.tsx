@@ -12,7 +12,8 @@ import {
   MessageSquare,
   ShieldCheck,
   X,
-  Target
+  Target,
+  Tags
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const menuItems = [
   { icon: History, label: "Amallar", href: "/dashboard/transactions" },
   { icon: CreditCard, label: "Nasiyalar", href: "/dashboard/debts" },
   { icon: Target, label: "Maqsadlar", href: "/dashboard/goals" },
+  { icon: Tags, label: "Kategoriyalar", href: "/dashboard/categories" },
   { icon: Settings, label: "Sozlamalar", href: "/dashboard/settings" },
 ];
 
